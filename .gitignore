@@ -1,0 +1,5 @@
+credentials.txt
+*.xlsx
+desktop.ini
+
+.vscode/
