@@ -3,3 +3,5 @@ credentials.txt
 desktop.ini
 
 .vscode/
+*.pyc
+__pycache__

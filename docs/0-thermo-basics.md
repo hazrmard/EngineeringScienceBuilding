@@ -1,4 +1,4 @@
-# Thermodynamic concepts
+# Thermodynamics concepts
 
 ## [Heat engine][1]
 
