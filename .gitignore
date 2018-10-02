@@ -5,3 +5,4 @@ desktop.ini
 .vscode/
 *.pyc
 __pycache__
+*.ipynb_checkpoints
