@@ -1,4 +1,9 @@
-# Documentation
+---
+title: Documentation - Home
+order: -1
+---
+
+# Documentation - Home
 
 These files document basics of HVAC systems as they pertain to the scope of this research.
 
@@ -17,3 +22,12 @@ The documentation is divided into a discussion of background concepts in physics
 5. [Dataset description](4-dataset.md)
 
 6. [Preprocessing](5-preprocessing.md)
+
+
+## Installation
+
+Requires python 3.7. To install dependencies:
+
+```bash
+> pip install -r requirements.txt
+```

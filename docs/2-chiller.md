@@ -1,3 +1,8 @@
+---
+title: Chiller
+order: 2
+---
+
 # Chiller
 
 A chiller is a device that removes heat from a liquid. Removal of heat is done using a refrigerant - a medium that can absorb the heat energy of the liquid and dissipate it elsewhere. The refrigerant is a liquid with a low boiling point. There are two approaches for transferring heat from the target liquid:

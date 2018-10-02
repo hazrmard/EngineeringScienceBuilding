@@ -1,3 +1,8 @@
+---
+title: Industry terms
+order: 1
+---
+
 # Industry terms
 
 ## HVAC

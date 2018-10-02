@@ -1,1 +1,4 @@
-theme: minima
+title: Engineering Science Building
+description: Documentation of concepts and code for Engineering Science Building.
+show_downloads: true
+theme: jekyll-theme-leap-day
