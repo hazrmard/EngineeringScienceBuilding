@@ -1,4 +1,9 @@
 title: Engineering Science Building
 description: Documentation of concepts and code for Engineering Science Building.
 show_downloads: true
-theme: jekyll-theme-leap-day
+theme: minima
+
+header_pages:
+  - index.md
+
+github_username: hazrmard/EngineeringScienceBuilding

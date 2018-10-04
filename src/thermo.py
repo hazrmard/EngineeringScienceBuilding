@@ -87,7 +87,7 @@ def _stull_eq(t, rh, tw):
 
     The root of `g(t)` is the ambient temperature. Used by `tambient()`.
     """
-    return tw - (t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
+    return - tw + (t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
               + np.arctan(t + rh) - np.arctan(rh - 1.676331)
               + 0.00391838 * np.power(rh, 1.5) * np.arctan(0.023101 * rh)
               - 4.686035)

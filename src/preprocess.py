@@ -24,12 +24,14 @@ def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
     Fills missing values for Outside Air Temperature and Ambient Wet-Bulb
     temperature.
     """
-    # Filling in estimates of Wet-Bulb temperature where absent
+    # Filling in estimates of Wet-Bulb temperature where absent.
+    # Requires Ambient temperature and humidity values.
     if 'Ambient Wet-Bulb' in df.columns:
         sel = df['Ambient Wet-Bulb'].isna()
         df.loc[sel, 'Ambient Wet-Bulb'] = wetbulb(df.loc[sel, 'Outside Air Temperature'],
                                                     df.loc[sel, 'Outside Air Humidity'])
-    # Filling in estimates of Ambient temperature where absent
+    # Filling in estimates of Ambient temperature where absent.
+    # Requires wet-bulb temperature and relative humidity values.
     if 'Outside Air Temperature' in df.columns:
         sel = df['Outside Air Temperature'].isna() & ~df['Ambient Wet-Bulb'].isna()
         df.loc[sel, 'Outside Air Temperature'] = ambient(df.loc[sel, 'Ambient Wet-Bulb'],

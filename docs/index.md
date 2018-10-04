@@ -3,11 +3,16 @@ title: Documentation - Home
 order: -1
 ---
 
-# Documentation - Home
+# Engineering Science Building
 
-These files document basics of HVAC systems as they pertain to the scope of this research.
+[Repository source](https://git.isis.vanderbilt.edu/SmartBuildings/EngineeringScienceBuilding)
 
-The purpose of this project is to analyze performance of HVAC systems - particularly chillers and cooling towers - in the Engineering Science Building (ESB) at Vanderbilt University.
+[GitHub Mirror](https://github.com/hazrmard/EngineeringScienceBuilding)
+
+
+These files document basics of HVAC systems and smart control approaches as they pertain to the scope of this research.
+
+The purpose of this project is to analyze performance of HVAC systems - particularly chillers and cooling towers - in the Engineering Science Building (ESB) at Vanderbilt University to develop control approaches to maximize cooling and power efficiency.
 
 The documentation is divided into a discussion of background concepts in physics, jargon in the HVAC industry, layout of air conditioning systems, and a description of the dataset specific to the system at ESB.
 
