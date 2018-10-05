@@ -64,23 +64,21 @@ Because a heat pump is simply *moving* heat and not *creating* it from work, COP
 COP = Useful heat removed (or supplied) / Work done by the system
 ```
 
-<div>$$
+$$
 \begin{align*}
-COP_{cooling} &= \frac{Q_L}{-W} \\
-
+COP_{cooling} &= \frac{Q_L}{-W}     \\
 COP_{heating) &= \frac{-Q_H}{-W}    \\
 \end{align*}
-$$</div>
+$$
 
 The theoretical maximum COP is for a Carnot cycle:
 
-<div>$$
+$$
 \begin{align*}
-COP_{max cooling} &= \frac{T_L}{T_H - T_L}
-
-COP_{mac heating) &= \frac{T_H}{T_H - T_L}
+COP_{max cooling} &= \frac{T_L}{T_H - T_L}  \\
+COP_{mac heating) &= \frac{T_H}{T_H - T_L}  \\
 \end{align*}
-$$</div>
+$$
 
 *Note*: Temperature should be in absolute units like Kelvin.
 
