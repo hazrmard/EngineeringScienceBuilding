@@ -24,9 +24,9 @@ The documentation is divided into a discussion of background concepts in physics
 
 4. [Cooling towers](3-cooling-tower.md)
 
-5. [Dataset description](4-dataset.md)
+6. [Preprocessing](4-preprocessing.md)
 
-6. [Preprocessing](5-preprocessing.md)
+5. [Dataset description](5-dataset.md)
 
 7. [Analysis: Cooling Tower](6-analysis-cooling-tower.md)
 
