@@ -65,19 +65,21 @@ COP = Useful heat removed (or supplied) / Work done by the system
 ```
 
 $$
-\begin{align*}
-COP_{cooling} &= \frac{Q_L}{-W}     \\
-COP_{heating) &= \frac{-Q_H}{-W}    \\
-\end{align*}
+COP_{cooling} = \frac{Q_L}{-W}
+$$
+
+$$
+COP_{heating) = \frac{-Q_H}{-W}
 $$
 
 The theoretical maximum COP is for a Carnot cycle:
 
 $$
-\begin{align*}
-COP_{max cooling} &= \frac{T_L}{T_H - T_L}  \\
-COP_{mac heating) &= \frac{T_H}{T_H - T_L}  \\
-\end{align*}
+COP_{max cooling} = \frac{T_L}{T_H - T_L}
+$$
+
+$$
+COP_{max heating) = \frac{T_H}{T_H - T_L}
 $$
 
 *Note*: Temperature should be in absolute units like Kelvin.
