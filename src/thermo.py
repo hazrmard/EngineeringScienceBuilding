@@ -11,30 +11,53 @@ from scipy.optimize import newton
 _ABConstants = namedtuple('ArdenBuckConstants', 'a b c d')
 ABC = _ABConstants(a=6.1121, b=18.678, c=257.14, d=234.5)
 
+# Temperature conversion functions
+# f: Farenheit
+# c: Celsius
+# k: Kelvin
 
+def f2c(f: float): return (f - 32) / 1.8
 
-def f2c(f: float):
-    return (f - 32) / 1.8
+def f2k(f: float): return c2k(f2c(f))
 
+def c2f(c: float): return (c * 1.8) + 32
 
+def c2k(c: float): return c + 273.15
 
-def f2k(f: float):
-    return f2c(f) + 273.15
+def k2c(k: float): return k - 273.15
 
+def k2f(k: float): return c2f(k2c(k))
 
+# Energy conversion functions
+# btu: British Thermal Unit
+# j: Joule
 
-def c2f(c: float):
-    return (c * 1.8) + 32
+def btu2j(btu: float): return btu * 1055.056
 
+def j2btu(j: float): return j / 1055.056
 
+# Power conversion functions
+# btuhr: BTU / hour
+# w: Watt
+# ton: Ton
 
-def c2k(c: float):
-    return c + 273.15
+def btuhr2w(btu: float): return btu2j(btu) / 3600
 
+def btuhr2ton(btuhr: float): return btuhr / 12000
 
+def ton2btuhr(ton: float): return ton * 12000
 
-def k2c(k: float):
-    return k - 273.15
+def ton2w(ton: float): return btuhr2w(ton2btuhr(ton))
+
+def w2btuhr(w: float): return j2btu(w * 3600)
+
+def w2ton(w: float): return btuhr2ton(w2btuhr(w))
+
+# Flow rate / volume conversion functions
+# gph: Gallons Per Hour
+# m2s: Cubic Metres per second
+
+def gph2m3s(gph: float): return gph * 3.7854e-3 / 3600
 
 
 

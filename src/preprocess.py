@@ -16,49 +16,79 @@ To preprocess CSV files.
 
 import pandas as pd
 
-from thermo import wetbulb, ambient, f2k
+from thermo import wetbulb, ambient, f2k, ton2w, gph2m3s
 
 
 
 TEMP_FIELDS = (
-    'Cond Entering Water Temp',
-    'Cond Leaving Water Temp',
-    'Evaporator Entering Water Temperature',
-    'Evaporator Leaving Water Temperature',
-    'Outside Air Temperature',
-    'Ambient Wet-Bulb'
+    'TempCondIn',
+    'TempCondOut',
+    'TempEvapIn',
+    'TempEvapOut',
+    'TempAmbient',
+    'TempWetbulb'
+)
+
+TONS_FIELDS = (
+    'Tons',
+)
+
+FLOWRATE_FIELDS = (
+    'FlowEvap',
+)
+
+KWATTS_FIELDS = (
+    'PowFanA',
+    'PowFanB',
+    'PowIn'
 )
 
 
 
-def standardize(df: pd.DataFrame, temp_fields=TEMP_FIELDS) -> pd.DataFrame:
+def standardize(df: pd.DataFrame, temp_fields=TEMP_FIELDS, kwatts_fields=KWATTS_FIELDS,
+    flowrate_fields=FLOWRATE_FIELDS, tons_fields=TONS_FIELDS) -> pd.DataFrame:
     """
     Convert tempteratures to Kelvins.
+    Convert KiloWatts to Watts.
+    Convert Gallons per hour to cubic metres per second.
+    Convert Tons of cooling to watts.
     """
     for field in temp_fields:
         if field in df.columns:
             df.loc[:, field] = f2k(df.loc[:, field].values)
+
+    for field in kwatts_fields:
+        if field in df.columns:
+            df.loc[:, field] *= 1000
+
+    for field in tons_fields:
+        if field in df.columns:
+            df.loc[:, field] = ton2w(df.loc[:, field].values)
+
+    for field in flowrate_fields:
+        if field in df.columns:
+            df.loc[:, field] = gph2m3s(df.loc[:, field].values)
     return df
 
 
 
 def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Fills missing values for Outside Air Temperature and Ambient Wet-Bulb
+    Fills missing values for TempAmbient and TempWetbulb
     temperature.
     """
     # Filling in estimates of Wet-Bulb temperature where absent.
     # Requires Ambient temperature and humidity values.
-    if 'Ambient Wet-Bulb' in df.columns:
-        sel = df['Ambient Wet-Bulb'].isna()
-        df.loc[sel, 'Ambient Wet-Bulb'] = wetbulb(df.loc[sel, 'Outside Air Temperature'],
-                                                    df.loc[sel, 'Outside Air Humidity'])
+    if 'TempAmbient' in df.columns:
+        sel = df['TempWetbulb'].isna()
+        df.loc[sel, 'TempWetbulb'] = wetbulb(df.loc[sel, 'TempAmbient'],
+                                                    df.loc[sel, 'PerHumidity'])
     # Filling in estimates of Ambient temperature where absent.
     # Requires wet-bulb temperature and relative humidity values.
-    if 'Outside Air Temperature' in df.columns:
-        sel = df['Outside Air Temperature'].isna() & ~df['Ambient Wet-Bulb'].isna()
-        df.loc[sel, 'Outside Air Temperature'] = ambient(df.loc[sel, 'Ambient Wet-Bulb'],
-                                                            df.loc[sel, 'Outside Air Humidity'])
+    if 'TempAmbient' in df.columns:
+        sel = df['TempAmbient'].isna() & ~df['TempWetbulb'].isna()
+        df.loc[sel, 'TempAmbient'] = ambient(df.loc[sel, 'TempWetbulb'],
+                                                            df.loc[sel, 'PerHumidity'])
     return df
 
 

@@ -1,7 +1,9 @@
 ---
 title: Pre-processing
-order: 5
+order: 4
 ---
+
+The data is sourced from an Excel document. It is converted to `csv` for faster read/write operations.
 
 ## Data type
 
@@ -17,7 +19,35 @@ These operations are done in `ioops.py` when excel files are converted to csv.
 
 ## Units
 
-Temperature values are recorded in degrees Farenheit. They are converted to Celsius. Formulae in `thermo.py` rely on Celsuis values.
+Temperature values are recorded in degrees Farenheit. They are converted to Kelvin. Formulae in `thermo.py` rely on Kelvin values.
+
+Power measurements in kilowatts and tons are converted to watts.
+
+Flow rates are converted from gallons per hour to cubic metres per second.
+
+Fields with explicit units (`kWperTon`) are not converted.
+
+## Fleid names
+
+Fields are manually renamed to remove spaces, punctuation characters, and application specific designations.
+
+Sensor fields are first prefixed by type of measurement:
+
+* Temperature: `Temp`.
+* Power: `Pow`
+* Flow rate: `Flow`
+* Percentage: `Per`
+
+Sensor fields are then indexed by location of measurement:
+
+* Condenser: `Cond`
+* Evaporator: `Evap`
+* Fan: `Fan`
+* Chiller: `Chil`
+* Chilled Water Pump: `ChiP`
+* Condenser Water Pump: `ConP`
+
+So the field measuring entering water temperature for a condenser will be `TempCondIn`.
 
 ## Missing temperature values
 

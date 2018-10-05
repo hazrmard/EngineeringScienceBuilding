@@ -30,7 +30,7 @@ $$
 
 Where:
 
-* $c_m$ is the specific mass heat capacity of water i.e. energy required to heat $1g$ of water by $1 \degree C$.
+* $c_m$ is the specific mass heat capacity of water i.e. energy required to heat $1g$ of water by $1 K$.
 * $m$ is the mass of water being cooled.
 * $T_H, T_L$ are high and low temperatures of water.
 
