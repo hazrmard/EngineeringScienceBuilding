@@ -3,8 +3,6 @@ title: Cooling tower
 order: 3
 ---
 
-# Cooling tower
-
 ![https://en.wikipedia.org/wiki/File:CoolingTower.png](img/3-cooling-tower.png)
 
 Cooling towers are used to expel heat from warm water coming out of water-cooled condensers in chiller units. The water has absorbed heat from the chiller's refrigerant as it condenses. There are three ways to transfer heat out of water:

@@ -13,10 +13,9 @@ python -m ioops [FILE, [FILE,...]]
 
 To carry out excel to csv conversion.
 """
-import os
+from os.path import abspath, join, dirname
 
 import pandas as pd
-from pandas import read_csv
 from dateutil.parser import parse
 
 # Timezones: a dict of TZ-code with offset from UTC in seconds
@@ -48,14 +47,15 @@ def xlsx_to_csv(xlsx: str):
         # Some cells have '??? ' which is removed to allow for numeric conversion
         for col in sheet.columns:
             sheet[col] = sheet[col].astype(str).str.replace('\?\?\? ', '')
-        sheet.to_csv(os.path.join(os.path.dirname(xlsx), name + '.csv'))
+        sheet.to_csv(abspath(join(dirname(xlsx), name + '.csv')))
 
 
 
 if __name__ == '__main__':
-    default = ['../SystemInfo/BDXChillerData.xlsx']
     import sys
     from glob import glob
+
+    default = [abspath(join(dirname(__file__), '../SystemInfo/BDXChillerData.xlsx'))]
     paths = sys.argv[2:] if len(sys.argv) >= 3 else default
     for arg in paths:
         for xl in glob(arg):

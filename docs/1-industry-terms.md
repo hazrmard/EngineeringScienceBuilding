@@ -3,8 +3,6 @@ title: Industry terms
 order: 1
 ---
 
-# Industry terms
-
 ## HVAC
 
 [*HVAC*][1] stands for Heating, Ventilation, and Air Conditioning.

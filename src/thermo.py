@@ -28,17 +28,28 @@ def c2f(c: float):
 
 
 
+def c2k(c: float):
+    return c + 273.15
+
+
+
+def k2c(k: float):
+    return k - 273.15
+
+
+
 def vaporpressure(t: float):
     """
     Uses Arden Buck equation to find saturation vapor pressure from ambient
-    temperature in Celsius.
+    temperature in Kelvin.
 
     Args:
 
-    * `t (float)`: Temperature in Celsius.
+    * `t (float)`: Temperature in Kelvin.
     """
+    t = k2c(t)
     arg = (ABC.b - t / ABC.d) * (t / (ABC.c + t))
-    return ABC.a * np.exp(arg)
+    return c2k(ABC.a * np.exp(arg))
 
 
 
@@ -49,12 +60,13 @@ def dewpoint(t: float, rh: float) -> float:
 
     Args:
 
-    * `t (float)`: Temperature in Celsius.
+    * `t (float)`: Temperature in Kelvin.
     * `rh (float)`: Relative humidity [0-100].
     """
+    t = k2c(t)
     arg = (ABC.b - t / ABC.d) * (t / (ABC.c + t))
     gamma = np.log(rh * np.exp(arg) / 100)
-    return (ABC.c * gamma) / (ABC.b - gamma)
+    return c2k((ABC.c * gamma) / (ABC.b - gamma))
 
 
 
@@ -65,10 +77,12 @@ def wetbulb(t: float, rh: float) -> float:
 
     Args:
 
-    * `t (float)`: Temperature in Celsius.
+    * `t (float)`: Temperature in Kelvin.
     * `rh (float)`: Relative humidity [0-100].
     """
-    return (t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
+    t = k2c(t)
+    return c2k(
+            t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
             + np.arctan(t + rh) - np.arctan(rh - 1.676331)
             + 0.00391838 * np.power(rh, 1.5) * np.arctan(0.023101 * rh)
             - 4.686035)
@@ -85,7 +99,8 @@ def _stull_eq(t, rh, tw):
 
     `g(t) = f(t, rh) - tw`
 
-    The root of `g(t)` is the ambient temperature. Used by `tambient()`.
+    The root of `g(t)` is the ambient temperature. Used by `tambient()`. All
+    temperatues in the equation are Celsius.
     """
     return - tw + (t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
               + np.arctan(t + rh) - np.arctan(rh - 1.676331)
@@ -101,13 +116,14 @@ def ambient(tw: float, rh: float) -> float:
 
     Args:
 
-    * `t (float)`: Temperature in Celsius.
+    * `t (float)`: Temperature in Kelvin.
     * `rh (float)`: Relative humidity [0-100].
     """
+    tw = k2c(tw)
     if isinstance(tw, Number) and isinstance(rh, Number):
-        return newton(_stull_eq, x0=tw, args=(rh, tw))
+        return c2k(newton(_stull_eq, x0=tw, args=(rh, tw)))
     else:
         t = np.zeros(len(tw))
         for i, (tw_, rh_) in enumerate(zip(tw, rh)):
             t[i] = newton(_stull_eq, x0=tw_, args=(rh_, tw_))
-        return t
+        return c2k(t)

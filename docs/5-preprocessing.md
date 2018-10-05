@@ -3,15 +3,21 @@ title: Pre-processing
 order: 5
 ---
 
-# Pre-processing
-
 ## Data type
 
 Ideally, all cells in the dataset are numerical. Some preprocessing is required to remove errant `???` symbols and text.
 
 The raw data contain dates with timezones. Preprocessing removes timezone information.
 
+Missing values are represented by empty cells in Excel. They are explicitly converted to `nan` in csv format.
+
+Divisions by zero in formulas for `kw/Ton` are also explicitly converted to `nan` in csv format.
+
 These operations are done in `ioops.py` when excel files are converted to csv.
+
+## Units
+
+Temperature values are recorded in degrees Farenheit. They are converted to Celsius. Formulae in `thermo.py` rely on Celsuis values.
 
 ## Missing temperature values
 

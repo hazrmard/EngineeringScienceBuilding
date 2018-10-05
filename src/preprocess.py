@@ -16,7 +16,30 @@ To preprocess CSV files.
 
 import pandas as pd
 
-from thermo import wetbulb, ambient
+from thermo import wetbulb, ambient, f2k
+
+
+
+TEMP_FIELDS = (
+    'Cond Entering Water Temp',
+    'Cond Leaving Water Temp',
+    'Evaporator Entering Water Temperature',
+    'Evaporator Leaving Water Temperature',
+    'Outside Air Temperature',
+    'Ambient Wet-Bulb'
+)
+
+
+
+def standardize(df: pd.DataFrame, temp_fields=TEMP_FIELDS) -> pd.DataFrame:
+    """
+    Convert tempteratures to Kelvins.
+    """
+    for field in temp_fields:
+        if field in df.columns:
+            df.loc[:, field] = f2k(df.loc[:, field].values)
+    return df
+
 
 
 def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
@@ -41,12 +64,15 @@ def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    default = ['../SystemInfo/*.csv']
+    from os.path import abspath, join, dirname
     import sys
     from glob import glob
+
+    default = [abspath(join(dirname(__file__), '../SystemInfo/*.csv'))]
     paths = sys.argv[2:] if len(sys.argv) >= 3 else default
     for arg in paths:
         for csv in glob(arg):
             df = pd.read_csv(csv, index_col='Time', parse_dates=True, dtype=float)
+            df = standardize(df)
             df = fill_missing_temperatures(df)
             df.to_csv(csv)
