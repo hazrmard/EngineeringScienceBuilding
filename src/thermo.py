@@ -8,6 +8,15 @@ from numbers import Number
 import numpy as np
 from scipy.optimize import newton
 
+# physics constants
+_Constants = namedtuple('Constants', field_names = (
+    'cv',   # specific volumetric heat capacity of water (J / m^3 . K)
+    'cm',   # specific mass heat capacity of water (J / kg .K)
+))
+CONSTANTS = _Constants(cv=4.1796e6, cm=4.1813e3)
+
+
+# Constants used by vaporpressure() and dewpoint()
 _ABConstants = namedtuple('ArdenBuckConstants', 'a b c d')
 ABC = _ABConstants(a=6.1121, b=18.678, c=257.14, d=234.5)
 
@@ -84,11 +93,11 @@ def dewpoint(t: float, rh: float) -> float:
     Args:
 
     * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-100].
+    * `rh (float)`: Relative humidity [0-1].
     """
     t = k2c(t)
     arg = (ABC.b - t / ABC.d) * (t / (ABC.c + t))
-    gamma = np.log(rh * np.exp(arg) / 100)
+    gamma = np.log(rh * 100 * np.exp(arg) / 100)
     return c2k((ABC.c * gamma) / (ABC.b - gamma))
 
 
@@ -101,9 +110,10 @@ def wetbulb(t: float, rh: float) -> float:
     Args:
 
     * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-100].
+    * `rh (float)`: Relative humidity [0-1].
     """
     t = k2c(t)
+    rh *= 100   # convert from fraction to percentage
     return c2k(
             t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
             + np.arctan(t + rh) - np.arctan(rh - 1.676331)
@@ -125,6 +135,7 @@ def _stull_eq(t, rh, tw):
     The root of `g(t)` is the ambient temperature. Used by `tambient()`. All
     temperatues in the equation are Celsius.
     """
+    rh *= 100   # convert from fraction to percentage
     return - tw + (t * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
               + np.arctan(t + rh) - np.arctan(rh - 1.676331)
               + 0.00391838 * np.power(rh, 1.5) * np.arctan(0.023101 * rh)
@@ -140,7 +151,7 @@ def ambient(tw: float, rh: float) -> float:
     Args:
 
     * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-100].
+    * `rh (float)`: Relative humidity [0-1].
     """
     tw = k2c(tw)
     if isinstance(tw, Number) and isinstance(rh, Number):

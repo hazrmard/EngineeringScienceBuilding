@@ -9,6 +9,8 @@ order: -1
 
 [GitHub Mirror](https://github.com/hazrmard/EngineeringScienceBuilding)
 
+[Author: Ibrahim Ahmed](https://iahmed.me)
+
 
 These files document research on smart control of HVAC systems using data-driven methods.
 
@@ -20,15 +22,17 @@ The documentation is divided into a discussion of background concepts in physics
 
 2. [Industry terms](1-industry-terms.md)
 
-3. [Chiller systems](2-chiller.md)
+3. [Chillers - refrigeration](2-chiller.md)
 
-4. [Cooling towers](3-cooling-tower.md)
+4. [Chillers - Cooling towers](3-cooling-tower.md)
 
 6. [Preprocessing](4-preprocessing.md)
 
-5. [Dataset description](5-dataset.md)
+5. [Dataset and system description](5-dataset.md)
 
-7. [Analysis: Cooling Tower](6-analysis-cooling-tower.md)
+6. [Trends](6-trends.md)
+
+7. [Analysis: Cooling Tower](7-analysis-cooling-tower.md)
 
 
 ## Installation
@@ -38,3 +42,14 @@ Requires python 3.7. To install dependencies:
 ```bash
 > pip install -r requirements.txt
 ```
+
+One requirement is `IPyVolume` for 3D plots. To use it in jupyter notebook, run this command also:
+
+```bash
+jupyter nbextension enable --py --sys-prefix ipyvolume
+jupyter nbextension enable --py --user widgetsnbextension
+```
+
+Saving GIFs using `IPyVolume` requires [ImageMagick][1] with legacy options (i.e. the `convert.exe` command) enabled.
+
+[1]: https://www.imagemagick.org/script/index.php

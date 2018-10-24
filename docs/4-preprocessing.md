@@ -27,14 +27,15 @@ Flow rates are converted from gallons per hour to cubic metres per second.
 
 Fields with explicit units (`kWperTon`) are not converted.
 
-## Fleid names
+## Field names
 
 Fields are manually renamed to remove spaces, punctuation characters, and application specific designations.
 
 Sensor fields are first prefixed by type of measurement:
 
-* Temperature: `Temp`.
+* Temperature: `Temp`
 * Power: `Pow`
+* Frequency: `Freq`
 * Flow rate: `Flow`
 * Percentage: `Per`
 
@@ -62,6 +63,12 @@ The following empirical and physical relationships are used:
 3. [Wet bulb temperature equation][3] by Roland Stull that relates ambient temperature and relative humidity. This relation and its inverse are used to calculate ambient or wet bulb temperatures when one is absent.
 
 These operations are defined in `thermo.py` and called in `preprocess.py` to clean up csv files.
+
+## Missing/zero power values
+
+In several measurements power is recorded as 0. However this may not reflect the actual state of the system and may simply be an error in logging/networking or a temporary fluctuation. Because the cause of a zero measurement is indeterminate, such records are not considered during analysis.
+
+In essence, the system is analyzed only at the states when all components (chiller, water pumps, fans) are operational.
 
 [1]: https://en.wikipedia.org/wiki/Arden_Buck_equation
 [2]: https://en.wikipedia.org/wiki/Dew_point#Calculating_the_dew_point

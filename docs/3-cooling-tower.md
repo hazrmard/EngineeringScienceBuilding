@@ -7,7 +7,7 @@ order: 3
 
 Cooling towers are used to expel heat from warm water coming out of water-cooled condensers in chiller units. The water has absorbed heat from the chiller's refrigerant as it condenses. There are three ways to transfer heat out of water:
 
-1. **Dry cooling**: Heat transfer between water and ambient air through a surface for e.g. coils. Closed loop - no water lost.
+1. **Dry cooling**: Heat transfer between water and ambient air through a surface for e.g. coils. Closed loop - no water lost. Conduction.
 
 2. **Wet cooling**: Evaporative cooling. Temperature may go below ambient temperature down to wet-bulb temperature. Open process e.g. pans/pools - water is lost through evaporation.
 
