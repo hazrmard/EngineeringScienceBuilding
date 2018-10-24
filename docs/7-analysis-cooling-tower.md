@@ -43,7 +43,7 @@ $$
 The achieved COP is the ratio of the energy extracted from the water to the electrical input to the cooling tower.
 
 $$
-COP &= \frac{c_m m (T_H - T_L)}{E_{electrical}}
+COP = \frac{c_m m (T_H - T_L)}{E_{electrical}}
 $$
 
 Where:
@@ -85,7 +85,7 @@ Cooling tower measurements are clustered using [DBSCAN][2] on `PowConP`, `PowFan
 
 ![clusters](img/7-ct-power-clusters.gif)
 
-On default options, no clusters are found. However, most of the power states are distributes along high power consumption for the two fans. The condenser water pump shows an even distribution across measurements. In this case, the concentration around high fan power makes sense as the source data mostly had fan power set to 100% of maximum frequency.
+On default options, no clusters are found. However, most of the power states are distributed along high power consumption for the two fans. The condenser water pump shows an even distribution across measurements. In this case, the concentration around high fan power makes sense as the source data mostly had fan power set to 100% of maximum frequency.
 
 ## Evaporative cooling model
 
@@ -110,20 +110,20 @@ $$
 Where:
 
 $$
-\begin{aligned*}
+\begin{align*}
 E_{evap}(T)                 &= c_m m (T(0) - T(t)) \\
 \frac{d}{dt} E_{evap}(T)    &= -c_m m \frac{d}{dt} T(t)
-\end{aligned*}
+\end{align*}
 $$
 
 Combining, and adding constant of proportionality $k$:
 
 $$
-\begin{aligned*}
+\begin{align*}
 -c_m m \frac{d}{dt} T           &= k \frac{T(t) T_a v_{air} R}{T_w} \\
 \frac{1}{T(t)} \frac{d}{dt} T   &= -\frac{k T_a v_{air} R}{T_w c_m m} \\
 T(t) &= T(0) e^{-\frac{k T_a v_{air} R}{T_w c_m m} t}
-\end{aligned*}
+\end{align*}
 $$
 
 $v_{air}$ is unknown but can be approximated as $k_1 (\texttt{PerFreqFanA + PerFreqFanB}$).
