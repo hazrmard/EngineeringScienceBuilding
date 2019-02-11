@@ -1,6 +1,8 @@
 credentials.txt
 questions.txt
 *.xlsx
+*.pptx
+*.pdf
 desktop.ini
 
 .vscode/

@@ -1,18 +1,12 @@
 ---
-title: Dataset and system description
+title: Datasets and system description
 order: 5
 hasequations: true
 ---
 
 ![System description](img/5-system-description.png)
 
-The dataset provided is comprised of 2 timeseries:
-
-1. Parameters for Chiller 1
-
-2. Parameters for Chiller 2
-
-*Note: All fields are converted to SI units (Kelvins, watts, $m^3 s^{-1}$). Except for `KWPerTon`.*
+*Note: All fields are converted to SI units (Kelvins, watts, $m^3 s^{-1}$).*
 
 ## Schematics
 
@@ -24,9 +18,9 @@ For cooling towers:
 
 ![Towers](img/4-ChilledWaterSystem-towers.jpg)
 
-## Cooling tower parameters
+## System parameters
 
-Each cooling tower has the following parameters:
+Each cooling tower/chiller system has the following parameters:
 
 1. `Time`: Timestamp in 5 minute increments.
 
@@ -60,12 +54,14 @@ Each cooling tower has the following parameters:
 
 16. `TempWetbulb`: Wet-bulb temperature.
 
-17. `PerChilLoad`: Cooling load of the chiller as a fraction of maximum electrical capacity. The maximum cooling capacity in tons is 800 tons. The ratio `Tons / 800` should give roughly the same value as `PerChilLoad`.
+17. `PerChiLoad`: Cooling load of the chiller as a fraction of maximum electrical capacity. The maximum cooling capacity in tons is 800 tons. The ratio `Tons / 800` should give roughly the same value as `PerChilLoad`.
 
-And the following derived parameters:
+And the following derived fields:
 
-1. `Tons`: Amount of cooling done. Calculated using evaporator temperature change and volume flow rates (`7`, `8`, and `13`).
+1. `PowIn`: Total input power calculated as a sum of all power fields.
 
-2. `KWPerTon`: Measure of efficiency. Lower the better. Calculated from `2` and `18`.
 
-3. `PowIn`: Total input power calculated as a sum of all power fields.
+## Datasets
+
+For each of the 2 chillers (1 & 2), the data were recorded for six months from Spring Equinox (March 20, 2018) through Fall Equinox (September 23, 2018). Measurements were recorded at a 5 minute interval.
+
