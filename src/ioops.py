@@ -1,9 +1,11 @@
 """
-Input/Output operations for datasets.
+Input/Output operations for datasets stored as excel files. Assumes each excel file
+contains data on a single chiller. Sheets inside a file may contain different sets
+of columns id'd by the same index (for e.g. timestamp).
 
 Usage:
 
-* Either import to use functions,
+* Either import to use functions, or
 
 * Invoke from command line as:
 
@@ -13,7 +15,8 @@ python -m ioops [FILE, [FILE,...]]
 
 To carry out excel to csv conversion.
 """
-from os.path import abspath, join, dirname
+import os
+from os.path import abspath, join, dirname, splitext, basename
 
 import pandas as pd
 from dateutil.parser import parse
@@ -36,18 +39,28 @@ def xlsx_to_csv(xlsx: str):
     Convert an XLSX file to a csv file with proper date-time conversion for faster
     read operations later on.
 
+    * Removes `???` artefacts in cells,
+    * Inner joins multiple sheets in excel file on `Time`.
+
     Args:
 
     * `xlsx (str)`: The path to the excel file. All sheets are converted to separate
     csvs in the same directory as the excel document.
     """
+    xl_name = splitext(basename(xlsx))[0]
     xl = pd.read_excel(xlsx, sheet_name=None, **ESB_SCHEMA)
-    for name, sheet in xl.items():
-        sheet = sheet.set_index('Time')
+    sheets = [s for _, s in xl.items()]
+    for sheet in sheets:
+        sheet.set_index('Time', inplace=True)
         # Some cells have '??? ' which is removed to allow for numeric conversion
         for col in sheet.columns:
             sheet[col] = sheet[col].astype(str).str.replace('\?\?\? ', '')
-        sheet.to_csv(abspath(join(dirname(xlsx), name + '.csv')))
+    
+    aggregate = sheets[0]
+    for sheet in sheets[1:]:
+        aggregate = aggregate.join(sheet, on='Time', how='inner')
+
+    aggregate.to_csv(abspath(join(dirname(xlsx), xl_name + '.csv')))
 
 
 
@@ -55,7 +68,8 @@ if __name__ == '__main__':
     import sys
     from glob import glob
 
-    default = [abspath(join(dirname(__file__), '../SystemInfo/BDXChillerData.xlsx'))]
+    default = [abspath(join(os.environ.get('DATADIR', './'),
+                            'EngineeringScienceBuilding', 'Chillers.xlsx'))]
     paths = sys.argv[2:] if len(sys.argv) >= 3 else default
     for arg in paths:
         for xl in glob(arg):

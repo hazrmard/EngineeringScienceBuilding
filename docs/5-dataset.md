@@ -56,6 +56,10 @@ Each cooling tower/chiller system has the following parameters:
 
 17. `PerChiLoad`: Cooling load of the chiller as a fraction of maximum electrical capacity. The maximum cooling capacity in tons is 800 tons. The ratio `Tons / 800` should give roughly the same value as `PerChilLoad`.
 
+18. `FreqFanA`: Spinning rate of fan A in Hertz.
+
+19. `FreqFanB`: Spinning rate of fan B in Hertz.
+
 And the following derived fields:
 
 1. `PowIn`: Total input power calculated as a sum of all power fields.

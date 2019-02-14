@@ -28,7 +28,7 @@ TEMP_FIELDS = (
     'TempEvapIn',
     'TempEvapOut',
     'TempAmbient',
-    'TempWetbulb'
+    'TempWetBulb'
 )
 # Tons fields to convert to watts
 TONS_FIELDS = (
@@ -49,7 +49,7 @@ PER_FIELDS = (
     'PerFreqFanA',
     'PerFreqFanB',
     'PerHumidity',
-    'PerChilLoad'
+    'PerChilLoad',
 )
 # Power fields
 POW_FIELDS = (
@@ -97,20 +97,20 @@ def standardize(df: pd.DataFrame, temp_fields=TEMP_FIELDS, kwatts_fields=KWATTS_
 
 def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Fills missing values for TempAmbient and TempWetbulb
+    Fills missing values for TempAmbient and TempWetBulb
     temperature.
     """
     # Filling in estimates of Wet-Bulb temperature where absent.
     # Requires Ambient temperature and humidity values.
     if 'TempAmbient' in df.columns:
-        sel = df['TempWetbulb'].isna()
-        df.loc[sel, 'TempWetbulb'] = wetbulb(df.loc[sel, 'TempAmbient'],
+        sel = df['TempWetBulb'].isna()
+        df.loc[sel, 'TempWetBulb'] = wetbulb(df.loc[sel, 'TempAmbient'],
                                                     df.loc[sel, 'PerHumidity'])
     # Filling in estimates of Ambient temperature where absent.
     # Requires wet-bulb temperature and relative humidity values.
     if 'TempAmbient' in df.columns:
-        sel = df['TempAmbient'].isna() & ~df['TempWetbulb'].isna()
-        df.loc[sel, 'TempAmbient'] = ambient(df.loc[sel, 'TempWetbulb'],
+        sel = df['TempAmbient'].isna() & ~df['TempWetBulb'].isna()
+        df.loc[sel, 'TempAmbient'] = ambient(df.loc[sel, 'TempWetBulb'],
                                                             df.loc[sel, 'PerHumidity'])
     return df
 
@@ -142,11 +142,13 @@ def calculate_derivative_fields(df: pd.DataFrame):
 
 
 if __name__ == '__main__':
+    import os
     from os.path import abspath, join, dirname
     import sys
     from glob import glob
 
-    default = [abspath(join(dirname(__file__), '../SystemInfo/*.csv'))]
+    default = [abspath(join(os.environ.get('DATADIR', './'),
+                            'EngineeringScienceBuilding', 'Chillers.csv'))]
     paths = sys.argv[2:] if len(sys.argv) >= 3 else default
     for arg in paths:
         for csv in glob(arg):
