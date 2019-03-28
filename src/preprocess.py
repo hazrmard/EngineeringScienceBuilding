@@ -18,7 +18,7 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
-from thermo import wetbulb, ambient, f2k, ton2w, gph2m3s
+from thermo import wetbulb, ambient, f2k, ton2w, gph2m3s, CONSTANTS
 
 
 # Temperature fields to convert to Kelvins
@@ -130,13 +130,16 @@ def drop_missing_rows(df: pd.DataFrame, cols: List[str]=POW_FIELDS,
 
 
 
-def calculate_derivative_fields(df: pd.DataFrame):
+def calculate_derivative_fields(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates additional derivative fields:
 
     * `PowIn`: Sum of all power fields
+    * `PowCool`: Rate of heat extraction by the evaporator from incoming water.
     """
     df['PowIn'] = df.loc[:, POW_FIELDS].sum(axis=1)
+    df['PowCool'] = (df['TempEvapIn'] - df['TempEvapOut']) \
+                    * df['FlowEvap'] * CONSTANTS.cv
     return df
 
 

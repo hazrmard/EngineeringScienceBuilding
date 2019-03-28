@@ -32,24 +32,27 @@ The documentation is divided into a discussion of background concepts in physics
 
 6. [Trends](6-trends.md)
 
-7. [Analysis: Cooling Tower](7-analysis-cooling-tower.md)
+7. [Relationships](7-relationships.md)
+
+8. [Models](8-models.md)
 
 
 ## Installation
 
-Requires python 3.7. To install dependencies:
+Requires python 3.7. However, python 3.5+ shoould work fine. To install dependencies:
 
 ```bash
 > pip install -r requirements.txt
+# or
+> conda install --file requirements.txt
 ```
 
-One requirement is `IPyVolume` for 3D plots. To use it in jupyter notebook, run this command also:
+One requirement is `IPyVolume` for 3D plots. See installation instructions [here][2].
 
-```bash
-jupyter nbextension enable --py --sys-prefix ipyvolume
-jupyter nbextension enable --py --user widgetsnbextension
-```
 
 Saving GIFs using `IPyVolume` requires [ImageMagick][1] with legacy options (i.e. the `convert.exe` command) enabled.
 
+Currently `IPyVolume` does not work with Jupyter Lab. Instead use Jupyter Notebook to view those plots.
+
 [1]: https://www.imagemagick.org/script/index.php
+[2]: https://ipyvolume.readthedocs.io/en/latest/install.html

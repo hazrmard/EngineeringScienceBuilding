@@ -64,6 +64,8 @@ And the following derived fields:
 
 1. `PowIn`: Total input power calculated as a sum of all power fields.
 
+2. `PowCool`: Rate of heat energy extracted by the evaporator from water coming from living spaces.
+
 
 ## Datasets
 
