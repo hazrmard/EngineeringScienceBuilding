@@ -6,6 +6,19 @@ hasequations: true
 
 ## Correlations
 
+### Cross-correlation
+
+The [Pearson product-moment correlation][2] was calculated for each pair of variables:
+
+![Cross-correlation](img/7-pearson-correlation.png)
+
+### Mutual-information
+
+Normalized [mutual information][3] was calculated for each pair of variables. A value of 0 indicated no relationship. A value of 1 indicated perfect predictive ability between the two variables.
+
+![Mutual information (MI)](img/7-mutual-information.png)
+
+
 ### Fan speed and power consumption
 
 *Hypothesis*: Fan power, `PowFan[A | B]` depends on ambient temperature `TempAmbient`, relative humidity `PerHumidity`, and fan speed setting `PerFreqFan[A | B]`.
@@ -36,3 +49,5 @@ On default options, no clusters are found. However, most of the power states are
 
 
 [1]: http://scikit-learn.org/stable/modules/clustering.html#dbscan
+[2]: https://en.wikipedia.org/wiki/Pearson_correlation_coefficient?oldformat=true
+[3]: https://en.wikipedia.org/wiki/Mutual_information
