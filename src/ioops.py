@@ -67,10 +67,14 @@ def xlsx_to_csv(xlsx: str):
 if __name__ == '__main__':
     import sys
     from glob import glob
+    from argparse import ArgumentParser
 
     default = [abspath(join(os.environ.get('DATADIR', './'),
                             'EngineeringScienceBuilding', 'Chillers.xlsx'))]
-    paths = sys.argv[2:] if len(sys.argv) >= 3 else default
-    for arg in paths:
-        for xl in glob(arg):
+    parser = ArgumentParser()
+    parser.add_argument("paths", help="Excel files to convert.", default=default,
+                        nargs='*')
+    args = parser.parse_args()
+    for path in args.paths:
+        for xl in glob(path):
             xlsx_to_csv(xl)

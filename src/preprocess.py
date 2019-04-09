@@ -146,17 +146,25 @@ def calculate_derivative_fields(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == '__main__':
     import os
-    from os.path import abspath, join, dirname
+    from os.path import abspath, join
     import sys
     from glob import glob
+    from argparse import ArgumentParser
 
     default = [abspath(join(os.environ.get('DATADIR', './'),
                             'EngineeringScienceBuilding', 'Chillers.csv'))]
-    paths = sys.argv[2:] if len(sys.argv) >= 3 else default
-    for arg in paths:
-        for csv in glob(arg):
+    parser = ArgumentParser()
+    parser.add_argument("paths", help="CSV files to preprocess.", default=default,
+                        nargs='*')
+    parser.add_argument('--keep_zeros', help='Keep rows with 0 power values.',
+                        action='store_true', default=False)
+    args = parser.parse_args()
+
+    for path in args.paths:
+        for csv in glob(path):
             df = pd.read_csv(csv, index_col='Time', parse_dates=True, dtype=float)
-            df = drop_missing_rows(df)
+            if not args.keep_zeros:
+                df = drop_missing_rows(df)
             df = standardize(df)
             df = fill_missing_temperatures(df)
             df = calculate_derivative_fields(df)
