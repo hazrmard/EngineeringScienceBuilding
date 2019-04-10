@@ -69,5 +69,5 @@ And the following derived fields:
 
 ## Datasets
 
-For each of the 2 chillers (1 & 2), the data were recorded for six months from Spring Equinox (March 20, 2018) through Fall Equinox (September 23, 2018). Measurements were recorded at a 5 minute interval.
+For *Chiller 1* at the Engineering Science Building, parameter readings were recorded from January 1, 2018 through December 31, 2018. Measurements were recorded at a 5 minute interval.
 

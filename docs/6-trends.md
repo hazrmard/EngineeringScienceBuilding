@@ -3,7 +3,7 @@ title: 'Trends and metrics'
 order: 6
 ---
 
-An aggregate analysis of measurements over days reveals trends in sensor readings. The following trends were obtained by averaging measurements for a time across all days in the dataset.
+An aggregate analysis of measurements over days reveals trends in sensor readings. The following trends were obtained by averaging measurements for each week over the year. Blank periods correspond to invalid data that was cleared out during pre-processing.
 
 ## Temperature
 
@@ -50,3 +50,9 @@ During warmer parts of the day, the gap between ambient and wet-bulb temperature
 A plot of the control variable (fan speed) and the resulting power consumption shows that while power consumption generally tracks fan speed, additional variables also come into play. A moving average over a 1 hour window of mean fan A and B consumptions is shown for illustration.
 
 This also shows that both fans in a cooling tower are identically controlled.
+
+## Distribution of fan speed controls
+
+![Fan speed histogram](img/6-fan-power-hist.png)
+
+Fan modes overwhelmingly are either close to 100% power or switched off.

@@ -10,6 +10,7 @@ Usage:
 * Invoke from command line as:
 
 ```
+python -m ioops --help
 python -m ioops [FILE, [FILE,...]]
 ```
 

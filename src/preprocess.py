@@ -8,7 +8,8 @@ Usage:
 * Call from command line as:
 
 ```
-python -m preprocess [CSV, [CSV,...]]
+python -m preprocess --help
+python -m preprocess [CSV, [CSV,...]] [--keep_zeros]
 ```
 
 To preprocess CSV files.

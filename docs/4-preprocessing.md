@@ -115,7 +115,9 @@ These operations are defined in `thermo.py` and called in `preprocess.py` to cle
 
 ### Missing/zero power values
 
-In several measurements power is recorded as 0. However this may not reflect the actual state of the system and may simply be an error in logging/networking or a temporary fluctuation. Because the cause of a zero measurement is indeterminate, such records are not considered during analysis.
+~~In several measurements power is recorded as 0. However this may not reflect the actual state of the system and may simply be an error in logging/networking or a temporary fluctuation. Because the cause of a zero measurement is indeterminate, such records are not considered during analysis.~~
+
+Using the flag `--keep_zeros` for `preprocess.py` will keep rows where power values are 0.
 
 In essence, the system is analyzed only at the states when all components (chiller, water pumps, fans) are operational.
 

@@ -51,10 +51,10 @@ def animate_dataframes(frames: Iterable[pd.DataFrame], ax: plt.Axes,
     elif isinstance(ylim, Iterable):
         if len(ylim) == 2 and not any(map(lambda x: isinstance(x, Iterable), ylim)):
             ylim = (ylim, ylim)
-    
+
     if isinstance(yscale, str): yscale = (yscale, yscale)
     if isinstance(ylabel, str): ylabel = (ylabel, ylabel)
-    
+
     if xlim is None:
         xlim = (min(f.index.values.min() for f in frames),
                 max(f.index.values.max() for f in frames))
@@ -77,22 +77,24 @@ def animate_dataframes(frames: Iterable[pd.DataFrame], ax: plt.Axes,
             xlabel=xlabel, xscale=xscale, xlim=xlim)
     fig.autofmt_xdate()
     if rseries:     # right axis
-         ax2 = ax1.twinx()
-         ax2.set(ylabel=ylabel[1], yscale=yscale[1], ylim=ylim[1])
+        ax2 = ax1.twinx()
+        ax2.set(ylabel=ylabel[1], yscale=yscale[1], ylim=ylim[1])
 
-    lines1 = [ax1.plot([], [], f, label=s)[0] for s, f in zip_longest(lseries, fmt[0], fillvalue=fmt[0][-1])]
+    lines1 = [ax1.plot([], [], f, label=s)[0] for s, f in \
+                zip_longest(lseries, fmt[0], fillvalue=fmt[0][-1])]
     if rseries:
-        lines2 = [ax2.plot([], [], f, label=s)[0] for s, f in zip_longest(rseries, fmt[1], fillvalue=fmt[1][-1])]
+        lines2 = [ax2.plot([], [], f, label=s)[0] for s, f in \
+                zip_longest(rseries, fmt[1], fillvalue=fmt[1][-1])]
     else:
         lines2 = []
 
     if legend:
         ax1.legend(lines1+lines2, (*lseries, *rseries), loc='upper right')
-    
+
     # define animation start and frames
     def init_func():
         return (*lines1, *lines2)
-    
+
     def plot_func(i):
         frame = frames[i]
         if labels is not None:

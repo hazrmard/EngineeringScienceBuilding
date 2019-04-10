@@ -19,13 +19,11 @@ Normalized [mutual information][3] was calculated for each pair of variables. A 
 ![Mutual information (MI)](img/7-mutual-information.png)
 
 
-### Fan speed and power consumption
+## Causality
 
-*Hypothesis*: Fan power, `PowFan[A | B]` depends on ambient temperature `TempAmbient`, relative humidity `PerHumidity`, and fan speed setting `PerFreqFan[A | B]`.
+### Granger causality test
 
-A pipeline was set up where first the three features were normalized to [0-1] range. Then they were trained on a 90-10 training testing split. The coefficient of determination, $R^2 = 0.04$ indicating that the model simply predicts the mean power consumption. There is no strong linear relationship between the features and power consumption. *However*, this model is not conclusive as the data contain measurements mostly for when fan speed is near 100%. The model, as it is, simply shows that it cannot capture the noise in measurements - which is to be expected.
-
-![Fan power vs temp vs humidity](img/7-fan-power-vs-temp-humidity.png)
+TODO
 
 ## Clustering
 
