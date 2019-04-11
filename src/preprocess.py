@@ -148,7 +148,6 @@ def calculate_derivative_fields(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == '__main__':
     import os
     from os.path import abspath, join
-    import sys
     from glob import glob
     from argparse import ArgumentParser
 
@@ -166,6 +165,7 @@ if __name__ == '__main__':
             df = pd.read_csv(csv, index_col='Time', parse_dates=True, dtype=float)
             if not args.keep_zeros:
                 df = drop_missing_rows(df)
+            df.dropna(inplace=True)
             df = standardize(df)
             df = fill_missing_temperatures(df)
             df = calculate_derivative_fields(df)

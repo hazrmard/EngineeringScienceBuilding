@@ -91,7 +91,7 @@ This model makes several assumptions:
 
 The model can be solved as an exponential function. It can be modelled by a neural network.
 
-Using the following network parameters, a [coefficient of determination][2] of 0.953 was obtained on the data.
+The following network parameters are used:
 
 * Inputs: `TempCondOut`, `PerFreqFanA`, `PerFreqFanB`, `TempAmbient`, `TempWetBulb`
 * Output: `TempCondIn`
@@ -104,5 +104,30 @@ solver: ADAM
 momentum: 0.9
 ```
 
+Fan power control signals are bi-modally distributed with low variance arount 100% and 0% (see [trends][3]). A minority of control signals fall in the (0%, 95%) interval. This may cause the model to simply learn system dynamics for the modes of the distribution. Two approaches are used:
+
+#### Single MLP Model
+
+A single MLP is trained on the entirety of the data. This achieves a [coefficient of determination][2] of 0.953.
+
+#### Composite MLP
+
+Three identical MLPs are trained separately on clusters of samples where the control signals, `PerFreqFanA` and `PerFreqFanB` are:
+
+* Equal to 0
+* Between 0 and 0.95
+* Greater than 0.95
+
+The following results are obtained:
+
+| Cluster      	| Coefficient of determination 	|
+|--------------	|------------------------------	|
+| == 0         	| 0.97                         	|
+| < 0 & < 0.95 	| 0.67                         	|
+| > 0.95       	| 0.87                         	|
+
+Giving a weighed coefficient of determination of 0.86.
+
 [1]: 0-thermo-basics.md
 [2]: https://en.wikipedia.org/wiki/Coefficient_of_determination
+[3]: 6-trends.md
