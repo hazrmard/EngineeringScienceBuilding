@@ -10,7 +10,9 @@ import numpy as np
 import pandas as pd
 from sklearn import clone
 from sklearn.neural_network import MLPRegressor
+import torch
 import torch.nn as nn
+import torch.optim as optim
 
 
 
@@ -82,13 +84,57 @@ class TorchEstimator:
     Wraps a `torch.nn.Module` instance with a scikit-learn `Estimator` API.
     """
 
-    def __init__(self, module: nn.Module):
+    def __init__(self, module: nn.Module, optimizer: optim.Optimizer,
+                 loss: nn.modules.loss._Loss, epochs: int=10, verbose=True):
         self.module = module
+        self.optimizer = optimizer
+        self.loss = loss
+        self.epochs = epochs
+        self.verbose = verbose
 
 
     def fit(self, X, y):
-        pass
+        """
+        Fit target to features
+        """
+        for _ in range(self.epochs):
+            for instance, target in zip(self._to_batches(X), self._to_batches(y)):
+                self.module.zero_grad()
+                output = self.module(instance)
+                loss = self.loss(output, target)
+                loss.backward()
+                self.optimizer.step()
+        return self
 
 
-    def predict(self, X, y):
-        pass
+    def predict(self, X):
+        shape = X.size()
+        results = []
+        with torch.no_grad():
+            for batch in self._to_batches(X):
+                results.append(self.module(batch))
+        res_tensor = torch.zeros(len(results), *results[-1].size(),
+                                 dtype=results[-1].dtype)
+        for i in range(len(res_tensor)):
+            res_tensor[i] = results[i]
+        return self._from_batches(res_tensor)
+
+
+    def _to_batches(self, X):
+        shape = X.size()
+        ndims = len(shape)
+        if ndims == 3:
+            for i in range(shape[1]):
+                yield X[:, i, :]
+        else:
+            for i in range(shape[0]):
+                yield X[i]
+
+
+    def _from_batches(self, X):
+        shape = X.size()
+        ndims = len(shape)
+        if ndims == 3:
+            return X.transpose(0, 1)    # TODO: Transpose b/w seq len & batch not working
+        else:
+            return X

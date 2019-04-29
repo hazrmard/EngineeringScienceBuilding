@@ -123,7 +123,7 @@ The following results are obtained:
 | Cluster      	| Coefficient of determination 	|
 |--------------	|------------------------------	|
 | == 0         	| 0.97                         	|
-| < 0 & < 0.95 	| 0.67                         	|
+| 0 < & < 0.95 	| 0.67                         	|
 | > 0.95       	| 0.87                         	|
 
 Giving a weighed coefficient of determination of 0.86.
