@@ -10,8 +10,8 @@ Usage:
 * Invoke from command line as:
 
 ```
-python -m ioops --help
-python -m ioops [FILE, [FILE,...]]
+python -m to_csv --help
+python -m to_csv [FILE, [FILE,...]]
 ```
 
 To carry out excel to csv conversion.
@@ -24,10 +24,11 @@ from dateutil.parser import parse
 
 # Timezones: a dict of TZ-code with offset from UTC in seconds
 # To make data timezone-aware, add keyword argument tzinfos=TZINFOS to `parse`
-# in the lambda function in ESB_SCHEMA['converters']['Time'], and remove ignoretz
+# in the lambda function in ESB_SCHEMA['converters']['Time'], and remove ignoretz=True
 # argument.
 TZINFOS = {
     'CDT': -5*3600,
+    'CST': -6*3600
 }
 
 ESB_SCHEMA = {
@@ -40,7 +41,7 @@ def xlsx_to_csv(xlsx: str):
     Convert an XLSX file to a csv file with proper date-time conversion for faster
     read operations later on.
 
-    * Removes `???` artefacts in cells,
+    * Removes `???` artifacts in cells,
     * Inner joins multiple sheets in excel file on `Time`.
 
     Args:
@@ -56,7 +57,7 @@ def xlsx_to_csv(xlsx: str):
         # Some cells have '??? ' which is removed to allow for numeric conversion
         for col in sheet.columns:
             sheet[col] = sheet[col].astype(str).str.replace('\?\?\? ', '')
-    
+
     aggregate = sheets[0]
     for sheet in sheets[1:]:
         aggregate = aggregate.join(sheet, on='Time', how='inner')

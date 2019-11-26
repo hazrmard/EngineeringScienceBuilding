@@ -51,7 +51,7 @@ The total cooling depends on:
 A first-order approximation would be:
 
 $$
-\frac{d}{dt} E_{evap}(T) \propto \frac{T(t) T_a v_{air} R}{T_w}
+\frac{d}{dt} E_{evap}(T) \propto T(t) (T_a - T_w) v_{air} R
 $$
 
 Where:
@@ -67,9 +67,9 @@ Combining, and adding constant of proportionality $k$:
 
 $$
 \begin{align*}
--c_m m \frac{d}{dt} T           &= k \frac{T(t) T_a v_{air} R}{T_w} \\
-\frac{1}{T(t)} \frac{d}{dt} T   &= -\frac{k T_a v_{air} R}{T_w c_m m} \\
-T(t) &= T(0) e^{-\frac{k T_a v_{air} R}{T_w c_m m} t}
+-c_m m \frac{d}{dt} T           &= k T(t) (T_a - T_w) v_{air} R \\
+\frac{1}{T(t)} \frac{d}{dt} T   &= -\frac{k (T_a - T_w) v_{air} R}{c_m m} \\
+T(t) &= T(0) e^{-\frac{k (T_a - T_w) v_{air} R}{c_m m} t}
 \end{align*}
 $$
 

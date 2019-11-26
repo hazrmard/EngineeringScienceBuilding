@@ -18,8 +18,14 @@ Normalized [mutual information][3] was calculated for each pair of variables. A 
 
 ![Mutual information (MI)](img/7-mutual-information.png)
 
+###
+
 
 ## Causality
+
+### Vector auto-regression
+
+TODO
 
 ### Granger causality test
 

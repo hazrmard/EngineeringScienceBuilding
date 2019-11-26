@@ -6,6 +6,7 @@ questions.txt
 desktop.ini
 
 .vscode/
+src/bin/*
 *.pyc
 __pycache__
 *.ipynb_checkpoints

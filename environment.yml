@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - pandas
+  - matplotlib
+  - xlrd
+  - jupyter
+  - tqdm
+  - scikit-learn
+  - pip
+  - pip:
+    - dateutil
+    - ipyvolume
+    - https://git.isis.vanderbilt.edu/ahmedi/pyTorchBridge/-/archive/master/pyTorchBridge-master.tar.gz

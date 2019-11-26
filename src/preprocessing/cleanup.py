@@ -8,8 +8,8 @@ Usage:
 * Call from command line as:
 
 ```
-python -m preprocess --help
-python -m preprocess [CSV, [CSV,...]] [--keep_zeros]
+python -m cleanup --help
+python -m cleanup [CSV, [CSV,...]] [--keep_zeros]
 ```
 
 To preprocess CSV files.
@@ -157,16 +157,16 @@ if __name__ == '__main__':
     parser.add_argument("paths", help="CSV files to preprocess.", default=default,
                         nargs='*')
     parser.add_argument('--keep_zeros', help='Keep rows with 0 power values.',
-                        action='store_true', default=False)
+                        action='store_true', default=True)
     args = parser.parse_args()
 
     for path in args.paths:
         for csv in glob(path):
             df = pd.read_csv(csv, index_col='Time', parse_dates=True, dtype=float)
+            df = fill_missing_temperatures(df)
             if not args.keep_zeros:
                 df = drop_missing_rows(df)
-            df.dropna(inplace=True)
             df = standardize(df)
-            df = fill_missing_temperatures(df)
             df = calculate_derivative_fields(df)
+            df.dropna(inplace=True)
             df.sort_index(axis=1).to_csv(csv)

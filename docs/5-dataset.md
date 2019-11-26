@@ -52,7 +52,7 @@ Each cooling tower/chiller system has the following parameters:
 
 15. `PerHumidity`: Relative ambient humidity.
 
-16. `TempWetbulb`: Wet-bulb temperature.
+16. `TempWetBulb`: Wet-bulb temperature.
 
 17. `PerChiLoad`: Cooling load of the chiller as a fraction of maximum electrical capacity. The maximum cooling capacity in tons is 800 tons. The ratio `Tons / 800` should give roughly the same value as `PerChilLoad`.
 

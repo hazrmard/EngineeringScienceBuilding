@@ -1,9 +1,0 @@
-numpy
-pandas
-matplotlib
-xlrd
-jupyter
-tqdm
-dateutil
-scikit-learn
-ipyvolume
