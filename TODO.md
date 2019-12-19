@@ -1,11 +1,9 @@
-Research:
+# TODO
 
-* Finding temporal causal relationships in a time series. Instead of instantaneous `input-output` correlation measures, how to ascertain `input-delay-output` relationships in data.
+## Libraries
 
-Analysis:
+* [Platypus - Multi-objective optimization][1]
+* [Distributed evolutionary algorithms in Python - ][2]
 
-* Generate new neural network model based on full-year's data.
-
-Implement:
-
-* 
+[1]: https://platypus.readthedocs.io/en/latest/
+[2]: https://deap.readthedocs.io/en/master/

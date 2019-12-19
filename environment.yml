@@ -1,6 +1,8 @@
+name: esb
 channels:
   - conda-forge
 dependencies:
+  - python=3.7
   - numpy
   - pandas
   - matplotlib
@@ -12,4 +14,4 @@ dependencies:
   - pip:
     - dateutil
     - ipyvolume
-    - https://git.isis.vanderbilt.edu/ahmedi/pyTorchBridge/-/archive/master/pyTorchBridge-master.tar.gz
+    - gym

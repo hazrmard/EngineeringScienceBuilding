@@ -1,5 +1,5 @@
 ---
-title: 'Cooling Tower Models'
+title: 'Models'
 order: 8
 hasequations: true
 ---
