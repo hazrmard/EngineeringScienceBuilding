@@ -11,6 +11,31 @@ from gym import Env, spaces
 
 
 
+class TickerEnv(Env):
+
+
+    def __init__(self, tapes, seed=None):
+        self.tapes = tapes
+        self.tape = None
+        self.random = np.random.RandomState(seed)
+        self.ticks = 0
+        self.reset()
+
+
+    def reset(self):
+        tape_idx = self.random.randint(0, len(self.tapes))
+        self.tape = self.tapes[tape_idx]
+        self.ticks = 0
+
+
+
+class Chiller(TickerEnv):
+
+
+    def __init__(self, tapes, seed=None, )
+
+
+
 class CoolingTower(Env):
 
 

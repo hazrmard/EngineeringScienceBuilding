@@ -11,7 +11,6 @@ import pandas as pd
 from sklearn import clone
 from sklearn.neural_network import MLPRegressor
 from sklearn.base import BaseEstimator
-from torch.nn import Module
 
 
 

@@ -19,7 +19,7 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
-from thermo import wetbulb, ambient, f2k, ton2w, gph2m3s, CONSTANTS
+from ..thermo import wetbulb, ambient, f2k, ton2w, gph2m3s, CONSTANTS
 
 
 # Temperature fields to convert to Kelvins
@@ -106,13 +106,13 @@ def fill_missing_temperatures(df: pd.DataFrame) -> pd.DataFrame:
     if 'TempAmbient' in df.columns:
         sel = df['TempWetBulb'].isna()
         df.loc[sel, 'TempWetBulb'] = wetbulb(df.loc[sel, 'TempAmbient'],
-                                                    df.loc[sel, 'PerHumidity'])
+                                             df.loc[sel, 'PerHumidity'])
     # Filling in estimates of Ambient temperature where absent.
     # Requires wet-bulb temperature and relative humidity values.
     if 'TempAmbient' in df.columns:
         sel = df['TempAmbient'].isna() & ~df['TempWetBulb'].isna()
         df.loc[sel, 'TempAmbient'] = ambient(df.loc[sel, 'TempWetBulb'],
-                                                            df.loc[sel, 'PerHumidity'])
+                                             df.loc[sel, 'PerHumidity'])
     return df
 
 
@@ -157,16 +157,16 @@ if __name__ == '__main__':
     parser.add_argument("paths", help="CSV files to preprocess.", default=default,
                         nargs='*')
     parser.add_argument('--keep_zeros', help='Keep rows with 0 power values.',
-                        action='store_true', default=True)
+                        action='store_true', default=False)
     args = parser.parse_args()
 
     for path in args.paths:
         for csv in glob(path):
             df = pd.read_csv(csv, index_col='Time', parse_dates=True, dtype=float)
-            df = fill_missing_temperatures(df)
             if not args.keep_zeros:
                 df = drop_missing_rows(df)
             df = standardize(df)
+            df = fill_missing_temperatures(df)
             df = calculate_derivative_fields(df)
             df.dropna(inplace=True)
             df.sort_index(axis=1).to_csv(csv)

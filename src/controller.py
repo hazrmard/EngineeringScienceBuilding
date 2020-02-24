@@ -8,8 +8,6 @@ from sklearn.base import BaseEstimator
 import numpy as np
 from scipy.optimize import fmin, minimize
 
-from plotting import model_surface
-
 
 
 class GridSearchController(BaseEstimator):

@@ -21,6 +21,7 @@ from os.path import abspath, join, dirname, splitext, basename
 
 import pandas as pd
 from dateutil.parser import parse
+from dateutil.tz import UTC
 
 # Timezones: a dict of TZ-code with offset from UTC in seconds
 # To make data timezone-aware, add keyword argument tzinfos=TZINFOS to `parse`
@@ -32,7 +33,7 @@ TZINFOS = {
 }
 
 ESB_SCHEMA = {
-    'converters': {'Time': lambda x: parse(x, ignoretz=True)},
+    'converters': {'Time': lambda x: parse(x, tzinfos=TZINFOS).astimezone(UTC)},
 }
 
 
