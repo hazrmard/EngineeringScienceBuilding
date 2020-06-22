@@ -1,5 +1,5 @@
 """
-Contains formulae for thermodynamics operations
+Contains formulae for thermodynamics operations.
 """
 
 from collections import namedtuple
@@ -64,24 +64,39 @@ def w2ton(w: float): return btuhr2ton(w2btuhr(w))
 
 # Flow rate / volume conversion functions
 # gph: Gallons Per Hour
-# m2s: Cubic Metres per second
+# gpm: Gallons Per Minute
+# m3s: Cubic Metres per second
 
 def gph2m3s(gph: float): return gph * 3.7854e-3 / 3600
 
+def gpm2m3s(gpm: float): return gpm * 3.7854e-3 / 60
 
 
-def vaporpressure(t: float):
+
+# Pressure conversion
+
+def psi2pa(psi: float): return psi * 6894.75728
+
+
+
+def vaporpressure(t: float) -> float:
     """
     Uses Arden Buck equation to find saturation vapor pressure from ambient
     temperature in Kelvin.
 
-    Args:
+    Parameters
+    ----------
+    t: float
+        Temperature in Kelvin.
 
-    * `t (float)`: Temperature in Kelvin.
+    Returns
+    -------
+    float
+        The vapor pressure in Pascals.
     """
     t = k2c(t)
     arg = (ABC.b - t / ABC.d) * (t / (ABC.c + t))
-    return c2k(ABC.a * np.exp(arg))
+    return ABC.a * np.exp(arg) * 1000
 
 
 
@@ -90,10 +105,17 @@ def dewpoint(t: float, rh: float) -> float:
     Uses Magnus formula enhanced w/ Arden Buck constants to calculate dew point
     temperature.
 
-    Args:
+    Parameters
+    ----------
+    t: float
+        Temperature in Kelvin.
+    rh: float
+        Relative humidity [0-1].
 
-    * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-1].
+    Returns
+    -------
+    float
+        The dew point temperature in Kelvin.
     """
     t = k2c(t)
     arg = (ABC.b - t / ABC.d) * (t / (ABC.c + t))
@@ -107,10 +129,17 @@ def wetbulb(t: float, rh: float) -> float:
     Uses Roland Stull's formula to calculate wet bulb temperature from ambient
     temperature and relative humidity.
 
-    Args:
-
-    * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-1].
+    Parameters
+    ----------
+    t: float
+        Temperature in Kelvin.
+    rh: float
+        Relative humidity [0-1].
+    
+    Returns
+    -------
+    float
+        The wet bulb temperature in Kelvin.
     """
     t = k2c(t)
     rh *= 100   # convert from fraction to percentage
@@ -148,10 +177,17 @@ def ambient(tw: float, rh: float) -> float:
     Uses Roland Stull's formula and Newton's method to calculate ambient
     temperature from wet bulb temperature and relative humidity.
 
-    Args:
+    Parameters
+    ----------
+    tw: float
+        Temperature in Kelvin.
+    rh: float
+        Relative humidity [0-1].
 
-    * `t (float)`: Temperature in Kelvin.
-    * `rh (float)`: Relative humidity [0-1].
+    Returns
+    -------
+    float
+        The ambient temperature in Kelvin.
     """
     tw = k2c(tw)
     if isinstance(tw, Number) and isinstance(rh, Number):

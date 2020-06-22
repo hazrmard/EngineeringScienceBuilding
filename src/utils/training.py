@@ -4,14 +4,13 @@ Functions used when training models.
 
 from multiprocessing import Pool
 from os import cpu_count
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List
 
 import numpy as np
 import pandas as pd
 from sklearn import clone
 from sklearn.neural_network import MLPRegressor
 from sklearn.base import BaseEstimator
-from torch.nn import Module
 
 
 
@@ -43,19 +42,27 @@ def fit_composite_model(estimator: MLPRegressor,
 
 
 
-def contiguous_sequences(index: Iterable[pd.datetime], interval: pd.Timedelta) ->\
+def contiguous_sequences(index: Iterable[pd.datetime], interval: pd.Timedelta,
+                         filter_min: int=1) ->\
     Iterable[Iterable[pd.datetime]]:
     """
     Breaks up a `DatetimeIndex` or a list of timestamps into a list of contiguous
     sequences.
 
-    Args:
-    * `index`: An index/list of timestamps in chronoligical order,
-    * `interval`: a `Timedelta` object specifying the uniform intervals to determine
-    contiguous indices.
+    Parameters
+    ----------
+    index: Iterable[pd.datetime]
+        An index/list of timestamps in chronoligical order,
+    interval: pd.Timedelta
+        A `Timedelta` object specifying the uniform intervals to determine
+        contiguous indices.
+    filter_min: int, optional
+        Minimum size of subsequence to include in the result.
 
-    Returns:
-    * A list of lists of `pd.datetime` objects.
+    Returns
+    -------
+    List[Iterable[pd.datetime]]
+        A list of lists of `pd.datetime` objects.
     """
     indices = []
     j, k = 0, 1
@@ -74,14 +81,42 @@ def contiguous_sequences(index: Iterable[pd.datetime], interval: pd.Timedelta) -
                 j = k
                 k += 1
                 break
-    return indices
+    return [i for i in indices if len(i) >= filter_min]
 
 
 
-def seq_train_test_split(*sequences: Iterable, test_split: float=0.1):
+def seq_train_test_split(sequences: List[Iterable], test_split: float=0.1,
+                         min_size: int=5) -> Tuple[List, List]:
     """
+    Split a list of sequences into train/test sequences.
+
+    Parameters
+    ----------
+    sequences : List[Iterable]
+        A list of iterables each representing a sequence.
+    test_split : float, optional
+        Fraction of the data to be put in test set, by default 0.1
+    min_size : int, optional
+        Minimum size of split to be considered. Otherwise whole sequence is put
+        into training set, by default 5
+
+    Returns
+    -------
+    Tuple[List, List]
+        A tuple of two lists: a list of training sequences, and a list of test
+        sequences.
     """
-    pass
+    train, test = [], []
+    for seq in sequences:
+        size = len(seq)
+        test_size = int(test_split * size)
+        train_size = size - test_size
+        if test_size < min_size or train_size < min_size:
+            train.append(seq)
+            continue
+        train.append(seq[:train_size])
+        test.append(seq[train_size:])
+    return train, test
 
 
 
