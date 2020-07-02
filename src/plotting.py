@@ -2,7 +2,7 @@
 Specialized plot operations.
 """
 
-from typing import Iterable, Tuple, Dict, Any, Union
+from typing import Iterable, Tuple, Dict, Any, Union, Callable
 from itertools import zip_longest
 
 import numpy as np
@@ -10,7 +10,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.base import BaseEstimator
 
 from utils import is_datetype
 
@@ -115,7 +114,7 @@ def animate_dataframes(frames: Iterable[pd.DataFrame], ax: plt.Axes,
 
 
 
-def model_surface(model: BaseEstimator, X: np.ndarray, vary_idx: Tuple[int],
+def model_surface(predict_fn: Callable, X: np.ndarray, vary_idx: Tuple[int],
     vary_range: Tuple[Tuple[float, float]], vary_num: Tuple[int]) -> Tuple[np.ndarray]:
     """
     Evaluates a model over a 2D grid. The grid can either be a series of instances
@@ -128,20 +127,32 @@ def model_surface(model: BaseEstimator, X: np.ndarray, vary_idx: Tuple[int],
     Or generate a surface using model predictions from a single instance, but
     where two of the input variables are varied over some range.
 
-    Arguments:
-        model {BaseEstimator} -- A sklearn compatible object with a `predict(X)` method.
-        X {np.ndarray} -- An array of inputs with dimensions [instance, ..., features]
-        vary_idx {Tuple[int]} -- Indices of fields in input to vary
-        vary_range {Tuple[Tuple[float, float]]} -- Min, max range of variations
-        vary_num {Tuple[int]} -- Number of points in the range
+    Parameters
+    ----------
+    predict_fn : Callable
+        A function that takes `X` and produces outputs to be plotted on the z axis.
+    X : np.ndarray
+        A >2D array of inputs with where the last dimension has features
+        to be varied [instance, ..., features]
+    vary_idx : Tuple[int]
+        Indices of fields in input to vary
+    vary_range : Tuple[Tuple[float, float]]
+        Min, max range of variations
+    vary_num : Tuple[int]
+        Number of points in the range
 
-    Raises:
-        ValueError: If X is of length > 2 but number of fields to vary != 1.
-        ValueError: If number of fields, ranges, and points in range dont have
-            same length.
+    Raises
+    ------
+    ValueError
+        If X is of length > 2 but number of fields to vary != 1.
+    ValueError
+        If number of fields, ranges, and points in range dont have
+        same length.
 
-    Returns:
-        Tuple[np.ndarray] -- [description]
+    Returns
+    -------
+    Tuple : np.ndarray
+        3 2D arrays for x, y, and z coordinates of the surface.
     """
     # sanity checks
     vary_lens = [len(vary_idx), len(vary_range), len(vary_num)]
@@ -152,10 +163,10 @@ def model_surface(model: BaseEstimator, X: np.ndarray, vary_idx: Tuple[int],
     elif vary_lens[0] == 1 and len(X) < 1:
         raise ValueError('X must be of length > 1 if only one field is being varied.')
     elif vary_lens[0] > 1 and len(X) > 1:
-        # raise ValueError('X must be of length 1 if two fields are being varied.')
-        vary_lens = vary_lens[:1]
-        vary_idx = vary_idx[:1]
-        vary_num = vary_num[:1]
+        raise ValueError('X must be of length 1 if two fields are being varied.')
+        # vary_lens = vary_lens[:1]
+        # vary_idx = vary_idx[:1]
+        # vary_num = vary_num[:1]
 
     variations = [np.linspace(vr[0], vr[1], vn) for vr, vn in zip(vary_range, vary_num)]
 
@@ -167,7 +178,7 @@ def model_surface(model: BaseEstimator, X: np.ndarray, vary_idx: Tuple[int],
             X_ = X[None, i]
             X_ = np.repeat(X_, axis=0, repeats=vary_num[0])
             X_[..., vary_idx[0]] = variations[0]
-            z[i] = model.predict(X_)
+            z[i] = predict_fn(X_)
             x[i] = i
             y[i] = variations[0]
     # Case when 2 fields are being varied, and X is a single instance
@@ -179,7 +190,7 @@ def model_surface(model: BaseEstimator, X: np.ndarray, vary_idx: Tuple[int],
             X_[..., vary_idx[0]] = variations[0][i]
             X_ = np.repeat(X_, axis=0, repeats=vary_num[1])
             X_[..., vary_idx[1]] = variations[1]
-            z[i] = model.predict(X_)
+            z[i] = predict_fn(X_)
             x[i] = variations[0][i]
             y[i] = variations[1]
 

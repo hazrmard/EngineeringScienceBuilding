@@ -1,6 +1,5 @@
 """
-Defines the cooling tower environment. In this environment the action variables
-are the tower fan speed and the condenser pump power.
+Defines environments based on data-driven models.
 """
 
 
@@ -8,60 +7,46 @@ are the tower fan speed and the condenser pump power.
 from typing import List, Callable
 
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator
 from gym import Env, spaces
 
 
 
-class CoolingTower(Env):
+class Condenser(Env):
     """
     An environment based on a data-driven model of ESB chiller with external
     factors influencing state. With each step ('tick') the state vector is
     modified based on an array of external values provided.
     """
     
-    def __init__(self, estimator: BaseEstimator, is_recurrent: bool,
-                 external: List[np.ndarray], pump_control: bool=True,
-                 dtype: type=np.float32):
+    def __init__(self, condenser_est: BaseEstimator,
+                 external: List[pd.DataFrame], dtype: type=np.float32):
         """
         Parameters
         ----------
         estimator : BaseEstimator
             A scikit-learn like model that predicts state variables.
-        is_recurrent: bool
-            Whether the estimator is a recurrent neural network. If True, then
-            inputs are reshaped and past state is fed to the estimator as second
-            argument to estimator.predict(state, last_state).
         external : List[np.ndarray]
             A list of arrays containing episodes of state variables that are
             external. For cooling tower, each array is n x 3  with columns for
             condenser pump power, ambient temperature, and wet bulb temperature.
-        pump_control: bool
-            Whether the condenser pump is controllable, in which action space
-            will be 2 dimensional. Otherwise only fan speed is controlled.
         dtype : type, optional
             The data typr of state/action vectors, by default np.float32
         """
         super().__init__()
-        self.estimator = estimator
-        self.is_recurrent = is_recurrent
+        self.condenser_est = condenser_est
         self.external = external
-        self.pump_control = pump_control
+        self.external_vars = ('TempAmbient', 'TempWetBulb', 'TempEvapIn',
+                              'TempEvapOut', 'PressDiffEvap', 'PressDiffCond')
         self.dtype = dtype
         self.observation_space = spaces.Box(
-            #  PowConP, TempCondOut, TempAmbient, TempWetbulb, TempEvapIn, TempEvapOut, FlowEvap
-            low=np.asarray([100., 290., 260., 258., 278., 277., 0.], dtype=self.dtype),
-            high=np.asarray([22e3, 310., 310., 300.,291., 289., 0.002], dtype=self.dtype)
+            #  
+            low=np.asarray([45, 55, 15, 15, 42, 40, 0, -1], dtype=self.dtype),
+            high=np.asarray([85, 95, 100, 81, 55, 50, 10, 10], dtype=self.dtype)
         )
-        if pump_control:
-            # PerFanFreq, PowConP
-            self.action_space = spaces.Box(low=np.array([0., 1e2]),
-                                           high=np.array([1., 22e3]),
-                                           dtype=self.dtype)
-        else:
-            # PerFanFreq
-            self.action_space = spaces.Box(low=0., high=1., shape=(1,),
-                                           dtype=self.dtype)
+        self.action_space = spaces.Box(low=50., high=100., shape=(1,),
+                                       dtype=self.dtype)
         self.random = np.random.RandomState() # pylint: disable=no-member
         self._state = None
         self._time = None
@@ -95,7 +80,6 @@ class CoolingTower(Env):
         self._state = self.observation_space.sample()
         self._state = self.tick(t=0, state=self._state, external=self._curr_external)
         self._time = 0
-        self._batch_first = getattr(self.estimator, 'batch_first', True)
         return self._state
 
 
@@ -113,52 +97,41 @@ class CoolingTower(Env):
         self.action_space.seed(seed=seed)
 
 
-    def tick(self, t: int, state: np.ndarray, external: np.ndarray) -> np.ndarray:
+    def tick(self, t: int, state: np.ndarray, external: pd.DataFrame) -> np.ndarray:
         """
         Put external state variables in the state vector. Is called every time
         in step().
-        
+
         Parameters
         ----------
         t : int
             The time step since the beginning of the episode.
         state : np.ndarray
             The state vector.
-        external : np.ndarray
-            The array of external state variables for this episode.
+        external : pd.DataFrame
+            The DataFrame of external state variables for this episode.
         
         Returns
         -------
         np.ndarray
             The state vector with external state variables written.
         """
-        if not self.pump_control:
-            state[0] = external[t, 0]   # PowConP: condenser pump power
-        state[2] = external[t, 1]       # TempAmbient: ambient temperature
-        state[3] = external[t, 2]       # TempWetBulb: wet bulb temperature
-        state[4] = external[t, 3]       # TempEvapIn
-        state[5] = external[t, 4]       # TempEvapOut
-        state[6] = external[t, 5]       # FlowEvap
+        state[2:] = external.iloc[t]
         return state
 
 
     def step(self, action: np.ndarray):
         self._time += 1
         # Concatenate actions, states, and external variables
-        if self.pump_control:
-            concat = np.concatenate((action[:1], self._state), axis=0)
-        else:
-            concat = np.concatenate((action, self._state), axis=0)
-        concat = concat.reshape((1, 1, -1)) if self.is_recurrent \
-                                            else concat.reshape((1, -1))
-        pred = self.estimator.predict(concat)
-        powchi, powfans, tempcondin, tempcondout = \
-            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0], pred[..., 3][0]
+        concat = np.concatenate((action, self._state), axis=0)
+        concat = concat.reshape((1, -1))
+        pred = self.condenser_est.predict(concat)
+        powchi, tempcondout, tempcondin = \
+            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0]
         nstate = np.zeros_like(self._state)
         nstate = self.tick(t=self._time, state=nstate, external=self._curr_external)
-        if self.pump_control:
-            nstate[0] = action[1]
-        nstate[1] = tempcondout # Water temp entering cooling tower from chiller
+        nstate[0] = tempcondin # Water temp entering cooling tower from chiller
+        nstate[1] = tempcondout
         local_vars = locals()
         reward = self.reward(self._time, self._state, action, nstate, local_vars)
         done = self.done(self._time, self._state, action, nstate, local_vars)
@@ -169,8 +142,8 @@ class CoolingTower(Env):
     def reward(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
                locals: dict) -> float:
         # return - locals.get('powchi') / 421000. - locals.get('powfans') / 21230.
-        # return - locals.get('powchi') / 421000.
-        return - locals.get('powfans') / 21230 - locals.get('tempcondin') / 310
+        return - locals.get('powchi') / 421000.
+        # return - locals.get('powfans') / 21230 - locals.get('tempcondin') / 310
 
 
     def done(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
