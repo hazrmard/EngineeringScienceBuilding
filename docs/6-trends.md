@@ -3,6 +3,8 @@ title: 'Trends and metrics'
 order: 6
 ---
 
+*Note: These figures were generated from `v1` data.*
+
 An aggregate analysis of measurements over days reveals trends in sensor readings. The following trends were obtained by averaging measurements for each week over the year. Blank periods correspond to invalid data that was cleared out during pre-processing.
 
 ## Temperature

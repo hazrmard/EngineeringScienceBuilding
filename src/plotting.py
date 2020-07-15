@@ -198,7 +198,8 @@ def model_surface(predict_fn: Callable, X: np.ndarray, vary_idx: Tuple[int],
 
 
 
-def plot_surface(x: np.ndarray, y: np.ndarray, z: np.ndarray, ax=None, **kwargs):
+def plot_surface(x: np.ndarray, y: np.ndarray, z: np.ndarray, ax=None, **kwargs) \
+    -> Axes3D:
     """
     Plot a 3D surface given x, y, z coordinates.
 

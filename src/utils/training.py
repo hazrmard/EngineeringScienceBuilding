@@ -5,6 +5,7 @@ Functions used when training models.
 from multiprocessing import Pool
 from os import cpu_count
 from typing import Iterable, Tuple, List
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -42,9 +43,8 @@ def fit_composite_model(estimator: MLPRegressor,
 
 
 
-def contiguous_sequences(index: Iterable[pd.datetime], interval: pd.Timedelta,
-                         filter_min: int=1) ->\
-    Iterable[Iterable[pd.datetime]]:
+def contiguous_sequences(index: Iterable[datetime], interval: timedelta,
+                         filter_min: int=1) -> Iterable[Iterable[datetime]]:
     """
     Breaks up a `DatetimeIndex` or a list of timestamps into a list of contiguous
     sequences.

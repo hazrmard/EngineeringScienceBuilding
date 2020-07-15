@@ -4,6 +4,8 @@ order: 7
 hasequations: true
 ---
 
+*Note: These figures were generated from `v1` data.*
+
 ## Correlations
 
 ### Cross-correlation

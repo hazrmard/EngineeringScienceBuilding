@@ -3,6 +3,8 @@ questions.txt
 *.xlsx
 *.pptx
 *.pdf
+*.txt
+local.ini
 desktop.ini
 
 .vscode/

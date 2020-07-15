@@ -28,9 +28,9 @@ The documentation is divided into a discussion of background concepts in physics
 
 5. Data
 
-    a. [V1 Data](./datasets/v1/dataset.md)
+    a. [V1 Data](./datasets/v1/dataset.md) | [Preprocessing](./datasets/v1/preprocessing.md)
 
-    b. [V1 Preprocessing](./datasets/v1/preprocessing.md)
+    b. [V2 Data](./datasets/v2/dataset.md)
 
 6. [Trends](6-trends.md)
 

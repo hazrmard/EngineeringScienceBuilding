@@ -26,27 +26,42 @@ class Condenser(Env):
         Parameters
         ----------
         estimator : BaseEstimator
-            A scikit-learn like model that predicts state variables.
+            A scikit-learn like model that takes the action/state variables...:
+                ['TempCondInSetpoint', 'TempCondIn', 'TempCondOut', 'TempEvapOut',
+                  'PowChi', 'TempEvapIn', 'TempAmbient', 'TempWetBulb',
+                 'PressDiffEvap', 'PressDiffCond']
+            ...and predicts output variables (for the next time step):
+                ['PowChi', 'TempCondOut', 'TempCondIn', 'TempEvapOut']
         external : List[np.ndarray]
             A list of arrays containing episodes of state variables that are
-            external. For cooling tower, each array is n x 3  with columns for
-            condenser pump power, ambient temperature, and wet bulb temperature.
+            externally determined (e.g. weather conditions). In this case:
+                ['TempEvapIn', 'TempAmbient', 'TempWetBulb',
+                'PressDiffEvap', 'PressDiffCond']
         dtype : type, optional
             The data typr of state/action vectors, by default np.float32
         """
         super().__init__()
         self.condenser_est = condenser_est
         self.external = external
-        self.external_vars = ('TempAmbient', 'TempWetBulb', 'TempEvapIn',
-                              'TempEvapOut', 'PressDiffEvap', 'PressDiffCond')
+        self.external_vars = ('TempEvapIn', 'TempAmbient', 'TempWetBulb',
+                              'PressDiffEvap', 'PressDiffCond')
         self.dtype = dtype
         self.observation_space = spaces.Box(
-            #  
-            low=np.asarray([45, 55, 15, 15, 42, 40, 0, -1], dtype=self.dtype),
-            high=np.asarray([85, 95, 100, 81, 55, 50, 10, 10], dtype=self.dtype)
+            # 0: TempCondIn
+            # 1: TempCondOut
+            # 2: TempEvapOut
+            # 3: PowChi
+            # 4: TempEvapIn
+            # 5: TempAmbient
+            # 6: TempWetBulb
+            # 7: PressDiffEvap
+            # 8: PressDiffCond
+            low=np.asarray([ 45, 55, 40, 0.,   42, 15,  15, 0,  -1], dtype=self.dtype),
+            high=np.asarray([85, 95, 55, 400., 50, 100, 81, 10, 10], dtype=self.dtype)
         )
-        self.action_space = spaces.Box(low=50., high=100., shape=(1,),
-                                       dtype=self.dtype)
+        self.action_space = spaces.Box(
+            # 0: TempCondInSetpoint
+            low=50., high=100., shape=(1,), dtype=self.dtype)
         self.random = np.random.RandomState() # pylint: disable=no-member
         self._state = None
         self._time = None
@@ -56,7 +71,7 @@ class Condenser(Env):
         self.reset()
 
 
-    def reset(self, external: np.ndarray=None) -> np.ndarray:
+    def reset(self, external: np.ndarray=None, state0=np.ndarray) -> np.ndarray:
         """
         Reset environment. Randomly pick a new array of external state vectors
         for the next episode.
@@ -77,7 +92,7 @@ class Condenser(Env):
         else:
             self._curr_external = external
         self._ep_len = len(self._curr_external)
-        self._state = self.observation_space.sample()
+        self._state = self.observation_space.sample() if state0 is None else state0
         self._state = self.tick(t=0, state=self._state, external=self._curr_external)
         self._time = 0
         return self._state
@@ -116,7 +131,7 @@ class Condenser(Env):
         np.ndarray
             The state vector with external state variables written.
         """
-        state[2:] = external.iloc[t]
+        state[4:] = external.iloc[t]
         return state
 
 
@@ -126,12 +141,14 @@ class Condenser(Env):
         concat = np.concatenate((action, self._state), axis=0)
         concat = concat.reshape((1, -1))
         pred = self.condenser_est.predict(concat)
-        powchi, tempcondout, tempcondin = \
-            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0]
+        powchi, tempcondout, tempcondin, tempevapout = \
+            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0], pred[..., 3][0]
         nstate = np.zeros_like(self._state)
         nstate = self.tick(t=self._time, state=nstate, external=self._curr_external)
         nstate[0] = tempcondin # Water temp entering cooling tower from chiller
         nstate[1] = tempcondout
+        nstate[2] = tempevapout
+        nstate[3] = powchi
         local_vars = locals()
         reward = self.reward(self._time, self._state, action, nstate, local_vars)
         done = self.done(self._time, self._state, action, nstate, local_vars)

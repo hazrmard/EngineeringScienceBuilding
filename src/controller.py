@@ -1,101 +1,180 @@
 """
-Defines controller classes implementing various approaches.
+Controller script for condenser water setpoint.
 """
 
+from argparse import ArgumentParser
+from configparser import ConfigParser
+import os
+import sys
+import threading as th
+import logging
+from datetime import datetime, timedelta
 
+# Issue on Windows where python does not catch keyboard interrupt b/c
+# scipy/sklearn (using intel MLK installed via anaconda) imports do their own
+# interrupt handling and crash. Pip-installed scipy is fine.
+# https://github.com/ContinuumIO/anaconda-issues/issues/905
+os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 
-from sklearn.base import BaseEstimator
 import numpy as np
-from scipy.optimize import fmin, minimize
+import pandas as pd
+import pytz
+from sklearn.base import BaseEstimator
+
+sys.path.insert(0, '../../BDX/')
+import bdx
 
 
 
-class GridSearchController(BaseEstimator):
+def make_arguments() -> ArgumentParser:
+    SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
+    WORKING_DIR = os.path.abspath(os.getcwd())
+    SETTINGS_FILE = os.path.join(SOURCECODE_DIR, 'settings.ini')
+    LOG_FILE = os.path.join(SOURCECODE_DIR, 'log.txt')
 
-
-    def __init__(self, model, bounds, resolution, vary_idx):
-        self.model = model
-        self.bounds = bounds
-        self.resolution = resolution
-        self.vary_idx = vary_idx
-
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        bounds = self.bounds if isinstance(self.bounds[0], tuple) else (self.bounds,)
-        resolution = self.resolution if isinstance(self.resolution, tuple) else (self.resolution,)
-        vary_num = (r + 1 for r in resolution)
-        vary_idx = self.vary_idx if isinstance(self.vary_idx, tuple) else (self.vary_idx,)
-        const_mask = np.ones(X.shape[1], dtype=bool)
-        const_mask[np.asarray(vary_idx)] = 0
-        const_idx = tuple(np.arange(X.shape[1])[const_mask])
-        
-        vary_coords = []
-        for n, b in zip(vary_num, bounds):
-            vary_coords.append(np.linspace(*b, num=n, endpoint=True))
-        # coords is an array of all possible coordinates on the grid which must
-        # be evaluated to find the optimal point.
-        vary_coords = np.array(np.meshgrid(*vary_coords)).T.reshape(-1, len(vary_idx))
-        coords = np.zeros((len(vary_coords), X.shape[1]), dtype=X.dtype)
-        coords[:, np.asarray(vary_idx)] = vary_coords
-
-        control = np.empty((len(X), len(vary_idx)))
-        for i, x in enumerate(X):
-            coords[:, const_mask] = x[const_mask]
-            prediction = self.model.predict(coords)
-            best = np.argmin(prediction)
-            control[i] = coords[best, np.asarray(vary_idx)]
-        
-        # _, y, z = model_surface(model=self.model, X=X, vary_idx=self.vary_idx,
-        #                         vary_range=(self.bounds,), vary_num=vary_num)
-        # control = y[np.arange(len(y)).astype(int), np.argmin(z, axis=1).astype(int)]
-        # return np.squeeze(control)
-        return control
-
-
-
-class QuasiNewtonController(BaseEstimator):
-
-
-    def __init__(self, model, bounds, resolution, vary_idx):
-        self.model = model
-        self.bounds = bounds
-        self.resolution = resolution
-        self.vary_idx = vary_idx
-
-
-    def f(self, ctrl: np.ndarray, x: np.ndarray, vary_idx) -> np.ndarray:
-        x[vary_idx] = ctrl
-        return self.model.predict(x.reshape(1, -1))
-
-
-    def predict(self, X):
-        vary_idx = np.asarray(self.vary_idx if isinstance(self.vary_idx, tuple) \
-                              else (self.vary_idx,))
-        y = np.empty((len(X), len(vary_idx)))
-        for i, x in enumerate(X):
-            argmin = minimize(self.f, x0=x[vary_idx], args=(x, vary_idx),
-                              bounds=self.bounds, method='L-BFGS-B',
-                              options={'maxiter': 10, 'disp': True})
-            y[i] = argmin.x
-        return np.squeeze(y)
-
-
-
-class BinaryApproachController(BaseEstimator):
-     # See: http://www.computrols.com/cooling-tower-control-based-approach/
-
-    def __init__(self, model, bounds, resolution, vary_idx, margin):
-        self.model = model
-        self.bounds = bounds
-        self.resolution = resolution
-        self.vary_idx = vary_idx
-        self.margin = margin
+    parser = ArgumentParser(description='Condenser set-point optimization script.')
+    parser.add_argument('-i', '--interval', type=int, required=False, default=None,
+                        help='Interval in seconds to apply control action.')
+    parser.add_argument('-o', '--output', type=str, required=False, default=None,
+                        help='Location of file to write output to.')
+    parser.add_argument('-s', '--settings', type=str, required=False, default=SETTINGS_FILE,
+                        help='Location of settings file.')
+    parser.add_argument('-l', '--logfile', type=str, required=False, default=LOG_FILE,
+                        help='Location of file to write logs to.')
+    parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
+                        help='Verbosity level.',
+                        choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
     
+    return parser
 
-    def predict(self, X, baseline):
-        output = self.model.predict(X)
-        control = np.zeros(len(X))
-        approach = output - baseline
-        control[approach <= self.margin] = self.bounds[0]
-        control[approach > self.margin] = self.bounds[-1]
-        return control
+
+
+def get_settings(parsed_args) -> dict:
+    settings = {}
+    settings.update(vars(parsed_args))
+    # try reading them, if error, return previous settings
+    cfg = ConfigParser()
+    cfg.read(parsed_args.settings)
+    for setting, value in cfg['DEFAULT'].items():
+        if (setting not in settings) or (settings[setting] is None):
+            settings[setting] = value
+    return settings
+
+
+
+def get_logger():
+    return logging.getLogger(__name__)
+
+
+
+def make_logger(**settings) -> logging.Logger:
+    logging.captureWarnings(True)
+    logger = get_logger()
+    formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+
+    handler_file = logging.FileHandler(filename=settings['logfile'], mode='a')
+    handler_file.setFormatter(formatter)
+    logger.addHandler(handler_file)
+
+    handler_stream = logging.StreamHandler(stream=sys.stderr)
+    handler_stream.setFormatter(formatter)
+    logger.addHandler(handler_stream)
+
+    logger.setLevel(settings['verbosity'])
+    return logger
+
+
+
+def get_controller(**settings) -> BaseEstimator:
+    from baseline_control import FeedbackController
+    class Controller(FeedbackController):
+
+        def feedback(self, X: pd.DataFrame):
+            return -X['PowChi']
+
+        def starting_action(self, X: pd.DataFrame):
+            return X['TempWetbulb'] + 4.
+
+    kp, ki, kd = float(settings['kp']), float(settings['ki']), float(settings['kd'])
+    ctrl = Controller(bounds=((60., 80.),), kp=kp, kd=kd, ki=ki)
+    return ctrl
+
+
+
+def update_controller(ctrl, **settings):
+    kp, ki, kd = float(settings['kp']), float(settings['ki']), float(settings['kd'])
+    ctrl.kp = kp
+    ctrl.ki = ki
+    ctrl.kd = kd
+    return ctrl
+
+
+
+def get_current_state(start, end, **settings) -> pd.DataFrame:
+    logger = get_logger()
+    uname, pwd = settings['username'], settings['password']
+    new_state = False
+    state = None
+    for trend_id in (settings['chiller_1_trend'], settings['chiller_2_trend']):
+        states = bdx.get_trend(trend_id=trend_id, username=uname, password=pwd,
+                               start=start, end=end, aggregation='Point')
+        if len(states) > 0:
+            state = states.iloc[-1]
+            if state['RunChi'] != 0.:
+                new_state = True
+                logger.info('Using trend {}'.format(trend_id))
+                break
+    if not new_state:
+        logger.warn('Could not read new state. Devices off or no updates.')
+    return state
+
+
+
+def put_control_action(action: np.ndarray, **settings):
+    output = settings['output']
+    with open(output, 'w') as f:
+        f.write(str(action[0]))
+
+
+
+
+if __name__ == '__main__':
+    try:
+        parser = make_arguments()
+        args = parser.parse_args()
+        settings = get_settings(args)
+        logger = make_logger(**settings)
+        ctrl = get_controller(**settings)
+    except Exception as e:
+        logger = get_logger()
+        logger.critical(msg=e, exc_info=True)
+        logger.critical(msg='Could not start script')
+        exit(-1)
+    
+    ev_halt = th.Event()
+    while not ev_halt.isSet():
+        try:
+            start = datetime.now(pytz.utc)
+            settings = get_settings(args)
+            ctrl = update_controller(ctrl, **settings)
+            prev_end = start - 2*timedelta(seconds=int(settings['interval']))
+            state = get_current_state(prev_end, start, **settings)
+            if state is not None:
+                logger.debug('State {}'.format(state))
+                action, = ctrl.predict(state)
+                logger.info('Setpoint: {}'.format(action))
+                put_control_action(action, **settings)
+            ev_halt.wait(float(settings['interval']) -\
+                         (datetime.now(pytz.utc).timestamp() - start.timestamp()))
+        except KeyboardInterrupt:
+            ev_halt.set()
+            logger.info('Keyboard interrupt. Halting.')
+        except Exception as exc:
+            try:
+                logger.error(msg=exc, exc_info=True)
+                ev_halt.wait(float(settings['interval']) - \
+                             (datetime.now(pytz.utc).timestamp() - start.timestamp()))
+            except Exception as exc:
+                logger.critical(msg='Halting', exc_info=True)
+                ev_halt.set()
