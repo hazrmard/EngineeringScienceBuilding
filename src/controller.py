@@ -21,7 +21,6 @@ import pandas as pd
 import pytz
 from sklearn.base import BaseEstimator
 
-sys.path.insert(0, '../../BDX/')
 import bdx
 
 
@@ -87,26 +86,39 @@ def make_logger(**settings) -> logging.Logger:
 
 
 def get_controller(**settings) -> BaseEstimator:
-    from baseline_control import FeedbackController
-    class Controller(FeedbackController):
+    from baseline_control import SimpleFeedbackController
+    class Controller(SimpleFeedbackController):
+    
+        def feedback(self, X):
+            if settings['target'].lower() == 'power':
+                return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
+            else:
+                return -X['TempCondIn']
+        
+        def starting_action(self, X):
+            return np.asarray([X['TempWetBulb'] + 4])
 
-        def feedback(self, X: pd.DataFrame):
-            return -X['PowChi']
+        def clip_action(self, u, X):
+            u = super().clip_action(u, X)
+            return np.clip(u, a_min=X['TempWetBulb'], a_max=None)
 
-        def starting_action(self, X: pd.DataFrame):
-            return X['TempWetbulb'] + 4.
-
-    kp, ki, kd = float(settings['kp']), float(settings['ki']), float(settings['kd'])
-    ctrl = Controller(bounds=((60., 80.),), kp=kp, kd=kd, ki=ki)
+    stepsize, window = float(settings['stepsize']), float(settings['window'])
+    setpoint_bounds = map(float, settings['bounds'].split(','))
+    ctrl = Controller(bounds=(setpoint_bounds,), stepsize=stepsize, window=window)
     return ctrl
 
 
 
 def update_controller(ctrl, **settings):
-    kp, ki, kd = float(settings['kp']), float(settings['ki']), float(settings['kd'])
-    ctrl.kp = kp
-    ctrl.ki = ki
-    ctrl.kd = kd
+    # kp, ki, kd = float(settings['kp']), float(settings['ki']), float(settings['kd'])
+    # ctrl.kp = kp
+    # ctrl.ki = ki
+    # ctrl.kd = kd
+    stepsize, window = float(settings['stepsize']), float(settings['window'])
+    setpoint_bounds = map(float, settings['bounds'].split(','))
+    ctrl.stepsize = stepsize
+    ctrl.window = window
+    ctrl.bounds = np.asarray([setpoint_bounds])
     return ctrl
 
 
@@ -161,7 +173,7 @@ if __name__ == '__main__':
             prev_end = start - 2*timedelta(seconds=int(settings['interval']))
             state = get_current_state(prev_end, start, **settings)
             if state is not None:
-                logger.debug('State {}'.format(state))
+                logger.debug('State\n{}'.format(state))
                 action, = ctrl.predict(state)
                 logger.info('Setpoint: {}'.format(action))
                 put_control_action(action, **settings)

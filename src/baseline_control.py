@@ -2,7 +2,8 @@
 Defines controller classes implementing various approaches.
 """
 
-
+from typing import Union
+from collections import deque
 
 from sklearn.base import BaseEstimator
 import numpy as np
@@ -174,50 +175,28 @@ class SimpleFeedbackController(BaseEstimator):
         self.bounds = np.asarray(bounds)
         self.stepsize = stepsize
         self.window = window
-        self._feedbacks = []
-        self._states = []
-        self._actions = []
-        self._errors = []
-        self._cum_errors = []
+        self._feedbacks = deque(maxlen=100)
+        self._states = deque(maxlen=100)
+        self._actions = deque(maxlen=100)
+        self._errors = deque(maxlen=100)
 
 
     def predict(self, X: pd.DataFrame):
         feedback = self.feedback(X)
         self._feedbacks.append(feedback)
-        # proportional
-        error = self._feedbacks[-1] - \
-            (np.mean(self._feedbacks[-self.window-1:-1]) if len(self._feedbacks) >= 2 \
-             else self._feedbacks[-1])
-        self._errors.append(error)
-        delta_error = self._errors[-1] - \
-            (self._errors[-2] if len(self._errors) >= 2 else self._errors[-1])
 
-        if len(self._actions) <= 2:
+        if len(self._actions) < 2:
             action = self.starting_action(X)
             self._actions.append(action)
             step_action = self._actions[-1] - self._actions[-min(2, len(self._actions))]
         else:
-            # change_action = self._actions[-1] - self._actions[-2]
-            # prev_change_action = self._actions[-2] - self._actions[-3]
-
-            # delta_error = self._errors[-1] - self._errors[-2]
-            # prev_delta_error = self._errors[-2] - self._errors[-3]
-
-            # # da - da1 = (da2 - da1) / (de2 - de1) * (de - de1)
-            # # da = (da2 - da1) / (de2 - de1) * (0 - de1) + da1
-            # # a = a1 + da
-            # gradient = (prev_change_action - change_action) / (prev_delta_error - delta_error + 1e-3)
-            # step_action = change_action + gradient * (-delta_error)
-            # action = self._actions[-1] + step_action
-            # action = np.clip(action, a_min=self.bounds[:, 0], a_max=self.bounds[:, 1])
-
             a_2, a_1 = self._actions[-1], self._actions[-2]
-            e_2, e_1 = self._feedbacks[-1], self._feedbacks[-2]
+            f_2, f_1 = self._feedbacks[-1], self._feedbacks[-2]
             dir_a = np.random.choice([-1, 1]) if np.sign(a_1-a_2) == 0 else np.sign(a_1-a_2)
-            dir_e = np.sign(e_1 - e_2)
-            step_action = self.stepsize * dir_a * dir_e 
+            dir_f = np.sign(f_1 - f_2)
+            step_action = self.stepsize * dir_a * dir_f 
             a_0 = a_1 + step_action
-            action = np.clip(a_0, a_min=self.bounds[:, 0], a_max=self.bounds[:, 1])
+            action = self.clip_action(a_0, X)
             
             self._actions.append(action)
         # print('err: {:8.2f}, d_err: {:8.2f}, T: {:5.2f}, deltaT: {:5.2f}'\
@@ -231,3 +210,7 @@ class SimpleFeedbackController(BaseEstimator):
 
     def starting_action(self, X: np.ndarray):
         raise NotImplementedError('Subclass and overide this method.')
+
+
+    def clip_action(self, u: Union[np.ndarray, float, int], X: np.ndarray):
+        return np.clip(u, a_min=self.bounds[:, 0], a_max=self.bounds[:, 1])

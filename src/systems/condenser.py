@@ -51,17 +51,20 @@ class Condenser(Env):
             # 1: TempCondOut
             # 2: TempEvapOut
             # 3: PowChi
-            # 4: TempEvapIn
-            # 5: TempAmbient
-            # 6: TempWetBulb
-            # 7: PressDiffEvap
-            # 8: PressDiffCond
-            low=np.asarray([ 45, 55, 40, 0.,   42, 15,  15, 0,  -1], dtype=self.dtype),
-            high=np.asarray([85, 95, 55, 400., 50, 100, 81, 10, 10], dtype=self.dtype)
+            # 4: PowFanA
+            # 5: PowFanB
+            # 6: PowConP
+            # 7: TempEvapIn
+            # 8: TempAmbient
+            # 9: TempWetBulb
+            # 10: PressDiffEvap
+            # 11: PressDiffCond
+            low=np.asarray([ 45, 55, 40, 0.,   0., 0., 0., 42, 15,  15, 0,  -1], dtype=self.dtype),
+            high=np.asarray([85, 95, 55, 400., 10, 10, 25, 50, 100, 81, 10, 10], dtype=self.dtype)
         )
         self.action_space = spaces.Box(
             # 0: TempCondInSetpoint
-            low=50., high=100., shape=(1,), dtype=self.dtype)
+            low=60., high=80., shape=(1,), dtype=self.dtype)
         self.random = np.random.RandomState() # pylint: disable=no-member
         self._state = None
         self._time = None
@@ -71,7 +74,7 @@ class Condenser(Env):
         self.reset()
 
 
-    def reset(self, external: np.ndarray=None, state0=np.ndarray) -> np.ndarray:
+    def reset(self, external: np.ndarray=None, state0: np.ndarray=None) -> np.ndarray:
         """
         Reset environment. Randomly pick a new array of external state vectors
         for the next episode.
@@ -131,7 +134,7 @@ class Condenser(Env):
         np.ndarray
             The state vector with external state variables written.
         """
-        state[4:] = external.iloc[t]
+        state[7:] = external.iloc[t]
         return state
 
 
@@ -141,14 +144,17 @@ class Condenser(Env):
         concat = np.concatenate((action, self._state), axis=0)
         concat = concat.reshape((1, -1))
         pred = self.condenser_est.predict(concat)
-        powchi, tempcondout, tempcondin, tempevapout = \
-            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0], pred[..., 3][0]
+        tempcondin, tempcondout, tempevapout, powchi, powfana, powfanb, powconp = \
+            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0], pred[..., 3][0], pred[..., 4][0], pred[..., 5][0], pred[..., 6][0]
         nstate = np.zeros_like(self._state)
         nstate = self.tick(t=self._time, state=nstate, external=self._curr_external)
         nstate[0] = tempcondin # Water temp entering cooling tower from chiller
         nstate[1] = tempcondout
         nstate[2] = tempevapout
         nstate[3] = powchi
+        nstate[4] = powfana
+        nstate[5] = powfanb
+        nstate[6] = powconp
         local_vars = locals()
         reward = self.reward(self._time, self._state, action, nstate, local_vars)
         done = self.done(self._time, self._state, action, nstate, local_vars)
@@ -158,9 +164,9 @@ class Condenser(Env):
 
     def reward(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
                locals: dict) -> float:
-        # return - locals.get('powchi') / 421000. - locals.get('powfans') / 21230.
-        return - locals.get('powchi') / 421000.
-        # return - locals.get('powfans') / 21230 - locals.get('tempcondin') / 310
+        # return - locals.get('powchi') / 400. - locals.get('powfans') / 20.
+        return - locals.get('powchi') / 400.
+        # return - locals.get('powfans') / 20 - locals.get('tempcondin') / 310
 
 
     def done(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
