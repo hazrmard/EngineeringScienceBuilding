@@ -16,6 +16,8 @@ This repository contains code for analysis and control of various HVAC systems a
 
 Environments are created using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for python 3. The following steps assume that the miniconda executable `conda` is on the system `PATH`.
 
+This repository can be downloaded via `git clone` or [directly as a zip file here](https://git.isis.vanderbilt.edu/SmartBuildings/EngineeringScienceBuilding/-/archive/master/EngineeringScienceBuilding-master.zip).
+
 ### ESB condenser water control
 
 To run the controller, review control settings, create the production environment, activate it, and call the script.
