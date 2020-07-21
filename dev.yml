@@ -1,4 +1,4 @@
-name: esb-prod
+name: esb
 channels:
   - conda-forge
 dependencies:
@@ -7,10 +7,12 @@ dependencies:
   - pandas
   - matplotlib
   - xlrd
+  - jupyter
   - tqdm
   - scikit-learn
   - pip
   - pip:
     - python-dateutil
+    - ipyvolume
     - gym
     - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx@v0.2.5

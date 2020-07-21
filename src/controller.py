@@ -24,25 +24,34 @@ from sklearn.base import BaseEstimator
 import bdx
 
 
+SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
+WORKING_DIR = os.path.abspath(os.getcwd())
+DEFAULT_PATHS = dict(
+    settings=os.path.join(SOURCECODE_DIR, 'settings.ini'),
+    logs=os.path.join(WORKING_DIR, 'log.txt'),
+    output=os.path.join(WORKING_DIR, 'output.txt')
+)
+
+
 
 def make_arguments() -> ArgumentParser:
-    SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
-    WORKING_DIR = os.path.abspath(os.getcwd())
-    SETTINGS_FILE = os.path.join(SOURCECODE_DIR, 'settings.ini')
-    LOG_FILE = os.path.join(SOURCECODE_DIR, 'log.txt')
-
     parser = ArgumentParser(description='Condenser set-point optimization script.')
     parser.add_argument('-i', '--interval', type=int, required=False, default=None,
                         help='Interval in seconds to apply control action.')
+    parser.add_argument('-t', '--target', type=str, required=False, default=None,
+                        help='Optimization target for condenser water setpoint.',
+                        choices=('power', 'temperature'))
     parser.add_argument('-o', '--output', type=str, required=False, default=None,
                         help='Location of file to write output to.')
-    parser.add_argument('-s', '--settings', type=str, required=False, default=SETTINGS_FILE,
+    parser.add_argument('-s', '--settings', type=str, required=False, default=None,
                         help='Location of settings file.')
-    parser.add_argument('-l', '--logfile', type=str, required=False, default=LOG_FILE,
+    parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
+    parser.add_argument('-d', '--dry-run', required=False, default=False,
+                        action='store_true', help='Exit after one action to test script.')
     
     return parser
 
@@ -55,8 +64,12 @@ def get_settings(parsed_args) -> dict:
     cfg = ConfigParser()
     cfg.read(parsed_args.settings)
     for setting, value in cfg['DEFAULT'].items():
-        if (setting not in settings) or (settings[setting] is None):
+        # Only update settings which were not specified in the command line
+        if (setting not in settings) or (settings.get(setting) is None):
             settings[setting] = value
+    for setting in ('output', 'logs', 'settings'):
+        if settings.get(setting) is None:
+            settings[setting] = DEFAULT_PATHS[setting]
     return settings
 
 
@@ -72,7 +85,7 @@ def make_logger(**settings) -> logging.Logger:
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
 
-    handler_file = logging.FileHandler(filename=settings['logfile'], mode='a')
+    handler_file = logging.FileHandler(filename=settings['logs'], mode='a')
     handler_file.setFormatter(formatter)
     logger.addHandler(handler_file)
 
@@ -88,12 +101,16 @@ def make_logger(**settings) -> logging.Logger:
 def get_controller(**settings) -> BaseEstimator:
     from baseline_control import SimpleFeedbackController
     class Controller(SimpleFeedbackController):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.target = str(settings['target']).lower()
     
         def feedback(self, X):
-            if settings['target'].lower() == 'power':
-                return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
-            else:
+            if self.target == 'temperature':
                 return -X['TempCondIn']
+            else:
+                return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
         
         def starting_action(self, X):
             return np.asarray([X['TempWetBulb'] + 4])
@@ -119,6 +136,7 @@ def update_controller(ctrl, **settings):
     ctrl.stepsize = stepsize
     ctrl.window = window
     ctrl.bounds = np.asarray([setpoint_bounds])
+    ctrl.target = str(settings['target']).lower()
     return ctrl
 
 
@@ -177,8 +195,14 @@ if __name__ == '__main__':
                 action, = ctrl.predict(state)
                 logger.info('Setpoint: {}'.format(action))
                 put_control_action(action, **settings)
-            ev_halt.wait(float(settings['interval']) -\
-                         (datetime.now(pytz.utc).timestamp() - start.timestamp()))
+            if settings['dry_run']:
+                logger.info('Dry run finished. Halting.')
+                ev_halt.set()
+            else:
+                time_taken = datetime.now(pytz.utc).timestamp() - start.timestamp()
+                time_left = float(settings['interval']) - time_taken
+                logger.info('Waiting for {:.1f}s'.format(time_left))
+                ev_halt.wait(time_left)
         except KeyboardInterrupt:
             ev_halt.set()
             logger.info('Keyboard interrupt. Halting.')
