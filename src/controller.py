@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from configparser import ConfigParser
 import os
 import sys
+from pprint import pformat
 import threading as th
 import logging
 from datetime import datetime, timedelta
@@ -43,8 +44,8 @@ def make_arguments() -> ArgumentParser:
                         choices=('power', 'temperature'))
     parser.add_argument('-o', '--output', type=str, required=False, default=None,
                         help='Location of file to write output to.')
-    parser.add_argument('-s', '--settings', type=str, required=False, default=None,
-                        help='Location of settings file.')
+    parser.add_argument('-s', '--settings', type=str, required=False,
+                        help='Location of settings file.', default=DEFAULT_PATHS['settings'])
     parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
@@ -52,6 +53,8 @@ def make_arguments() -> ArgumentParser:
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
     parser.add_argument('-d', '--dry-run', required=False, default=False,
                         action='store_true', help='Exit after one action to test script.')
+    parser.add_argument('-n', '--no-network', required=False, default=False,
+                        action='store_true', help='For testing code exec: no API calls.')
     
     return parser
 
@@ -62,12 +65,14 @@ def get_settings(parsed_args) -> dict:
     settings.update(vars(parsed_args))
     # try reading them, if error, return previous settings
     cfg = ConfigParser()
+    if parsed_args.settings is None:
+        raise ValueError('No settings file provided.')
     cfg.read(parsed_args.settings)
     for setting, value in cfg['DEFAULT'].items():
         # Only update settings which were not specified in the command line
         if (setting not in settings) or (settings.get(setting) is None):
             settings[setting] = value
-    for setting in ('output', 'logs', 'settings'):
+    for setting in ('output', 'logs'):
         if settings.get(setting) is None:
             settings[setting] = DEFAULT_PATHS[setting]
     return settings
@@ -102,9 +107,9 @@ def get_controller(**settings) -> BaseEstimator:
     from baseline_control import SimpleFeedbackController
     class Controller(SimpleFeedbackController):
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.target = str(settings['target']).lower()
+        def __init__(self, bounds, stepsize, window, target):
+            super().__init__(bounds=bounds, stepsize=stepsize, window=window)
+            self.target = target
     
         def feedback(self, X):
             if self.target == 'temperature':
@@ -121,7 +126,8 @@ def get_controller(**settings) -> BaseEstimator:
 
     stepsize, window = float(settings['stepsize']), float(settings['window'])
     setpoint_bounds = map(float, settings['bounds'].split(','))
-    ctrl = Controller(bounds=(setpoint_bounds,), stepsize=stepsize, window=window)
+    ctrl = Controller(bounds=(setpoint_bounds,), stepsize=stepsize, window=window,
+                      target=str(settings['target']).lower())
     return ctrl
 
 
@@ -137,11 +143,11 @@ def update_controller(ctrl, **settings):
     ctrl.window = window
     ctrl.bounds = np.asarray([setpoint_bounds])
     ctrl.target = str(settings['target']).lower()
-    return ctrl
 
 
 
 def get_current_state(start, end, **settings) -> pd.DataFrame:
+    # This is hardcoded to match column names in the trends.
     logger = get_logger()
     uname, pwd = settings['username'], settings['password']
     new_state = False
@@ -176,6 +182,7 @@ if __name__ == '__main__':
         settings = get_settings(args)
         logger = make_logger(**settings)
         ctrl = get_controller(**settings)
+        logger.debug(pformat(settings))
     except Exception as e:
         logger = get_logger()
         logger.critical(msg=e, exc_info=True)
@@ -183,34 +190,51 @@ if __name__ == '__main__':
         exit(-1)
     
     ev_halt = th.Event()
-    while not ev_halt.isSet():
-        try:
-            start = datetime.now(pytz.utc)
-            settings = get_settings(args)
-            ctrl = update_controller(ctrl, **settings)
-            prev_end = start - 2*timedelta(seconds=int(settings['interval']))
-            state = get_current_state(prev_end, start, **settings)
-            if state is not None:
-                logger.debug('State\n{}'.format(state))
-                action, = ctrl.predict(state)
-                logger.info('Setpoint: {}'.format(action))
-                put_control_action(action, **settings)
-            if settings['dry_run']:
-                logger.info('Dry run finished. Halting.')
-                ev_halt.set()
-            else:
-                time_taken = datetime.now(pytz.utc).timestamp() - start.timestamp()
-                time_left = float(settings['interval']) - time_taken
-                logger.info('Waiting for {:.1f}s'.format(time_left))
-                ev_halt.wait(time_left)
-        except KeyboardInterrupt:
-            ev_halt.set()
-            logger.info('Keyboard interrupt. Halting.')
-        except Exception as exc:
+    def run():
+        while not ev_halt.isSet():
             try:
-                logger.error(msg=exc, exc_info=True)
-                ev_halt.wait(float(settings['interval']) - \
-                             (datetime.now(pytz.utc).timestamp() - start.timestamp()))
-            except Exception as exc:
-                logger.critical(msg='Halting', exc_info=True)
+                start = datetime.now(pytz.utc)
+                settings = get_settings(args)
+                update_controller(ctrl, **settings)
+                prev_end = start - 2*timedelta(seconds=int(settings['interval']))
+                if settings['no_network']:
+                    state = None
+                else:
+                    state = get_current_state(prev_end, start, **settings)
+                if state is not None:
+                    logger.debug('State\n{}'.format(state))
+                    action, = ctrl.predict(state)
+                    logger.info('Setpoint: {}'.format(action))
+                    put_control_action(action, **settings)
+                if settings['dry_run']:
+                    logger.info('Dry run finished. Halting.')
+                    ev_halt.set()
+                else:
+                    time_taken = datetime.now(pytz.utc).timestamp() - start.timestamp()
+                    time_left = float(settings['interval']) - time_taken
+                    logger.info('Waiting for {:.1f}s'.format(time_left))
+                    ev_halt.wait(time_left)
+            except KeyboardInterrupt:
+                logger.info('Keyboard interrupt. Halting.')
                 ev_halt.set()
+            except Exception as exc:
+                logger.error(msg=exc, exc_info=True)
+                if settings['dry_run']:
+                    ev_halt.set()
+                else:
+                    ev_halt.wait(float(settings['interval']) - \
+                                (datetime.now(pytz.utc).timestamp() - start.timestamp()))
+                
+
+    try:
+        thread = th.Thread(target=run, daemon=False)
+        thread.start()
+        logger.info('Control thread started.')
+        thread.join()
+    except KeyboardInterrupt:
+        logger.info('Keyboard interrupt. Halting.')
+        ev_halt.set()
+        thread.join(timeout=2.)
+    except Exception as exc:
+                    logger.critical(msg='Halting', exc_info=True)
+                    ev_halt.set()
