@@ -190,13 +190,21 @@ class SimpleFeedbackController(BaseEstimator):
             self._actions.append(action)
             step_action = self._actions[-1] - self._actions[-min(2, len(self._actions))]
         else:
+            # [a|f]_[1|2] is actions and feedbacks at relative times 1, 2 i.e. first, second
             a_2, a_1 = self._actions[-1], self._actions[-2]
             f_2, f_1 = self._feedbacks[-1], self._feedbacks[-2]
-            dir_a = np.random.choice([-1, 1]) if np.sign(a_1-a_2) == 0 else np.sign(a_1-a_2)
-            dir_f = np.sign(f_1 - f_2)
-            step_action = self.stepsize * dir_a * dir_f 
-            a_0 = a_1 + step_action
-            action = self.clip_action(a_0, X)
+            # What was the direction of change in action from the last 2 steps?
+            dir_a = np.random.choice([-1, 1]) if np.sign(a_2 - a_1) == 0 else np.sign(a_2 - a_1)
+            # What was the direction of change in feedback from the last 2 steps?
+            dir_f = np.sign(f_2 - f_1)
+            # Feedback dir, action dir, step action
+            #       -           -           +
+            #       -           +           -
+            #       +           -           -
+            #       +           +           +
+            step_action = self.stepsize * dir_a * dir_f
+            action = a_2 + step_action
+            action = self.clip_action(action, X)
             
             self._actions.append(action)
         # print('err: {:8.2f}, d_err: {:8.2f}, T: {:5.2f}, deltaT: {:5.2f}'\

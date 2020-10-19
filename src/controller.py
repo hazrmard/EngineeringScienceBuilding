@@ -71,7 +71,14 @@ def get_settings(parsed_args) -> dict:
     for setting, value in cfg['DEFAULT'].items():
         # Only update settings which were not specified in the command line
         if (setting not in settings) or (settings.get(setting) is None):
-            settings[setting] = value
+            if setting in ('stepsize', 'window', 'interval'):
+                settings[setting] = float(value)
+            elif setting=='bounds':
+                settings[setting] = np.asarray([tuple(map(float, value.split(',')))])
+            elif setting=='target':
+                settings[setting] = value.lower()
+            else:
+                settings[setting] = value
     for setting in ('output', 'logs'):
         if settings.get(setting) is None:
             settings[setting] = DEFAULT_PATHS[setting]
@@ -124,10 +131,10 @@ def get_controller(**settings) -> BaseEstimator:
             u = super().clip_action(u, X)
             return np.clip(u, a_min=X['TempWetBulb'], a_max=None)
 
-    stepsize, window = float(settings['stepsize']), float(settings['window'])
-    setpoint_bounds = map(float, settings['bounds'].split(','))
-    ctrl = Controller(bounds=(setpoint_bounds,), stepsize=stepsize, window=window,
-                      target=str(settings['target']).lower())
+    stepsize, window = settings['stepsize'], settings['window']
+    setpoint_bounds = settings['bounds']
+    ctrl = Controller(bounds=setpoint_bounds, stepsize=stepsize, window=window,
+                      target=settings['target'])
     return ctrl
 
 
@@ -137,12 +144,13 @@ def update_controller(ctrl, **settings):
     # ctrl.kp = kp
     # ctrl.ki = ki
     # ctrl.kd = kd
-    stepsize, window = float(settings['stepsize']), float(settings['window'])
-    setpoint_bounds = map(float, settings['bounds'].split(','))
-    ctrl.stepsize = stepsize
-    ctrl.window = window
-    ctrl.bounds = np.asarray([setpoint_bounds])
-    ctrl.target = str(settings['target']).lower()
+    # type conversions now happen in `get_settings()`
+    # stepsize, window = float(settings['stepsize']), float(settings['window'])
+    # setpoint_bounds = tuple(map(float, settings['bounds'].split(',')))
+    ctrl.stepsize = settings['stepsize']
+    ctrl.window = settings['window']
+    ctrl.bounds = settings['bounds']
+    ctrl.target = settings['target']
 
 
 
