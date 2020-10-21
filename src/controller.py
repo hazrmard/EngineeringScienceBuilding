@@ -244,5 +244,5 @@ if __name__ == '__main__':
         ev_halt.set()
         thread.join(timeout=2.)
     except Exception as exc:
-                    logger.critical(msg='Halting', exc_info=True)
-                    ev_halt.set()
+        logger.critical(msg='Halting', exc_info=True)
+        ev_halt.set()

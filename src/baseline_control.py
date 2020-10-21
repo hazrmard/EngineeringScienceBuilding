@@ -187,6 +187,7 @@ class SimpleFeedbackController(BaseEstimator):
 
         if len(self._actions) < 2:
             action = self.starting_action(X)
+            action = self.clip_action(action, X)
             self._actions.append(action)
             step_action = self._actions[-1] - self._actions[-min(2, len(self._actions))]
         else:
@@ -212,13 +213,13 @@ class SimpleFeedbackController(BaseEstimator):
         return action,
 
 
-    def feedback(self, X: np.ndarray) -> float:
+    def feedback(self, X: pd.DataFrame) -> float:
         raise NotImplementedError('Subclass and overide this method.')
 
 
-    def starting_action(self, X: np.ndarray):
+    def starting_action(self, X: pd.DataFrame):
         raise NotImplementedError('Subclass and overide this method.')
 
 
-    def clip_action(self, u: Union[np.ndarray, float, int], X: np.ndarray):
+    def clip_action(self, u: Union[np.ndarray, float, int], X: pd.DataFrame):
         return np.clip(u, a_min=self.bounds[:, 0], a_max=self.bounds[:, 1])
