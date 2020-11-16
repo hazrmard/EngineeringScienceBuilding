@@ -14,17 +14,19 @@ This repository contains code for analysis and control of various HVAC systems a
 
 ## Installation and Use
 
-Environments are created using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for python 3. The following steps assume that the miniconda executable `conda` is on the system `PATH`.
+This code runs in a virtual environment. Environments are created using [Miniconda](https://docs.conda.io/en/latest/miniconda.html) for python 3. The following steps assume that the miniconda executable `conda` is on the system `PATH`.
 
 This repository can be downloaded via `git clone` or [directly as a zip file here](https://git.isis.vanderbilt.edu/SmartBuildings/EngineeringScienceBuilding/-/archive/master/EngineeringScienceBuilding-master.zip).
 
-### ESB condenser water control
+### Installation for ESB condenser water control
 
-To run the controller, review control settings, create the production environment, activate it, and call the script.
+The controller imports measurements from BDX (Buildinglogix Data eXchange), and writes a setpoint to a text file. Access to BDX requires login credentials.
+
+To run the controller, (1) review control settings, (2) create the production environment, (3) activate it, and (4) call the script.
 
 The environment needs to be created only once. Every time after, the environment is activated and the scipt is called.
 
-**Before running the controller**
+**Review settings before running the controller**
 
 The controller settings can be specified in a settings file. The default settings file is located in `src/settings.ini`. A file can be created at another location but the file path must be specified when running the controller script. To create a custom settings file, just copy `src/settings.ini` to a location of your choice.
 
@@ -36,16 +38,17 @@ The controller settings can be specified in a settings file. The default setting
 
 4. Choose the acceptable setpoint bounds in the `bounds` setting. The bounds are additionaly clipped by the Wetbulb temperature internally which is the lower limit on what is physically possible.
 
+**Optional Features**
+
+The controller is set up to send logs via email. It supports the SMTP protocol for email. The sending and receiving email addresses, email credentials, and server settings can be specified in the settings file.
+
 **Controller interface**
 
 ```bash
-conda env create -f environment.yml  # create environment
-conda activate esb-prod              # activate environment
-python ./src/controller.py --help    # generate script help message
-
+python src/controller.py --help
 usage: controller.py [-h] [-i INTERVAL] [-t {power,temperature}] [-o OUTPUT]
-                     [-s SETTINGS] [-l LOGS]
-                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-d]
+                     [-s SETTINGS] [-l LOGS] [-r REMOTE_LOGS]
+                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-d] [-n]
 
 Condenser set-point optimization script.
 
@@ -60,9 +63,14 @@ optional arguments:
   -s SETTINGS, --settings SETTINGS
                         Location of settings file.
   -l LOGS, --logs LOGS  Location of file to write logs to.
+  -r REMOTE_LOGS, --remote-logs REMOTE_LOGS
+                        host[:port] of server to POST logs to.
   -v {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --verbosity {CRITICAL,ERROR,WARNING,INFO,DEBUG}
                         Verbosity level.
   -d, --dry-run         Exit after one action to test script.
+  -n, --no-network      For testing code execution: no API calls.
+
+Additional settings can be changed from the specified settings ini file.
 ```
 
 Example commands:
