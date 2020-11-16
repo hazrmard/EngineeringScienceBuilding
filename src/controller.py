@@ -9,6 +9,9 @@ import sys
 from pprint import pformat
 import threading as th
 import logging
+from logging.handlers import HTTPHandler, BufferingHandler
+import smtplib
+import email
 from datetime import datetime, timedelta
 
 # Issue on Windows where python does not catch keyboard interrupt b/c
@@ -36,7 +39,8 @@ DEFAULT_PATHS = dict(
 
 
 def make_arguments() -> ArgumentParser:
-    parser = ArgumentParser(description='Condenser set-point optimization script.')
+    parser = ArgumentParser(description='Condenser set-point optimization script.',
+        epilog='Additional settings can be changed from the specified settings ini file.')
     parser.add_argument('-i', '--interval', type=int, required=False, default=None,
                         help='Interval in seconds to apply control action.')
     parser.add_argument('-t', '--target', type=str, required=False, default=None,
@@ -48,13 +52,15 @@ def make_arguments() -> ArgumentParser:
                         help='Location of settings file.', default=DEFAULT_PATHS['settings'])
     parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
+    parser.add_argument('-r', '--remote-logs', type=str, required=False, default=None,
+                        help='host[:port] of server to POST logs to.')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
     parser.add_argument('-d', '--dry-run', required=False, default=False,
                         action='store_true', help='Exit after one action to test script.')
     parser.add_argument('-n', '--no-network', required=False, default=False,
-                        action='store_true', help='For testing code exec: no API calls.')
+                        action='store_true', help='For testing code execution: no API calls.')
     
     return parser
 
@@ -94,18 +100,85 @@ def get_logger():
 def make_logger(**settings) -> logging.Logger:
     logging.captureWarnings(True)
     logger = get_logger()
+    logger.setLevel(settings['verbosity'])
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
 
+    # File logging
     handler_file = logging.FileHandler(filename=settings['logs'], mode='a')
     handler_file.setFormatter(formatter)
+    handler_file.setLevel(settings['logs_file_verbosity'])
     logger.addHandler(handler_file)
 
+    # Stream logging
     handler_stream = logging.StreamHandler(stream=sys.stderr)
     handler_stream.setFormatter(formatter)
+    handler_stream.setLevel(settings['logs_stream_verbosity'])
     logger.addHandler(handler_stream)
 
-    logger.setLevel(settings['verbosity'])
+    # HTTP Logging (TODO)
+    remote_log = settings.get('logs_server_destination')
+    remote_verbosity = settings.get('logs_server_verbosity')
+    if remote_log is not None and remote_verbosity is not None:
+        print(logging.handlers)
+        class RemoteHandler(HTTPHandler):
+            def emit(self, record):
+                return super().emit(record)
+        handler_remote = RemoteHandler(
+            host=remote_log,
+            url='/',
+            method='POST'
+        )
+
+    # Email logging
+    mailhost = settings.get('logs_email_smtp_server')
+    fromaddr = settings.get('logs_email_from')
+    toaddrs = settings.get('logs_email_to', '')
+    username = settings.get('logs_email_username')
+    password = settings.get('logs_email_password')
+    email_verbosity = settings.get('logs_email_verbosity')
+    ctrl_name = settings.get('controller', '')
+    ctrl_application = settings.get('application', '')
+
+    if (email_verbosity is not None and \
+        mailhost is not None and \
+        fromaddr is not None and \
+        len(toaddrs) > 0 and toaddrs[0]!='' and \
+        username is not None and password is not None):
+        
+        logger.info('Setting up email logging.')
+        class EmailHandler(BufferingHandler):
+            def __init__(self, capacity, flushLevel=logging.ERROR):
+                super().__init__(capacity)
+                self.flushLevel = flushLevel
+                self.smtp = smtplib.SMTP(mailhost, smtplib.SMTP_PORT)
+                self.smtp.starttls()
+                logger.info(self.smtp.login(username, password))
+
+            def flush(self):
+                maxlevel = max(self.buffer, key=lambda r: r.levelno).levelname
+                
+                msg = email.message.EmailMessage()
+                msg['from'] = fromaddr
+                msg['to'] = toaddrs
+                msg['subject'] = ctrl_application + ' ' + ctrl_name + ' ' + maxlevel
+                msg_str = ''
+                for record in self.buffer:
+                    msg_str += self.format(record) + '\n'
+                msg.set_content(msg_str)
+                self.smtp.send_message(msg)
+                super().flush()
+
+            def shouldFlush(self, record):
+                return super().shouldFlush(record) or record.levelno >= self.flushLevel
+        
+        handler_email = EmailHandler(capacity=int(settings.get('logs_email_batchsize')))
+        handler_email.setLevel(email_verbosity)
+        handler_email.setFormatter(formatter)
+        logger.addHandler(handler_email)
+    else:
+        logger.info('Skipping email logging.')
+
     return logger
 
 
