@@ -120,7 +120,6 @@ def make_logger(**settings) -> logging.Logger:
     remote_log = settings.get('logs_server_destination')
     remote_verbosity = settings.get('logs_server_verbosity')
     if remote_log is not None and remote_verbosity is not None:
-        print(logging.handlers)
         class RemoteHandler(HTTPHandler):
             def emit(self, record):
                 return super().emit(record)
@@ -198,7 +197,7 @@ def get_controller(**settings) -> BaseEstimator:
                 return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
         
         def starting_action(self, X):
-            return np.asarray([X['TempWetBulb'] + 4])
+            return np.asarray([X['TempWetBulb'] + np.random.uniform(low=4, high=6)])
 
         def clip_action(self, u, X):
             u = super().clip_action(u, X)
