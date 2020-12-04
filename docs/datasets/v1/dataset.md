@@ -1,10 +1,12 @@
 ---
-title: Datasets and system description
-order: 5
-hasequations: true
+title: v1 Dataset and system description
+order: 1
+hasequations: false
 ---
 
 This is the data set for *Chiller 1* at the Engineering Science Building. Parameter readings were recorded from January 1, 2018 through December 31, 2018. Measurements were recorded at a 5 minute interval.
+
+The preprocessed dataset is available [here][4].
 
 ## Data extraction
 
@@ -192,3 +194,4 @@ And the following derived fields:
 [1]: https://en.wikipedia.org/wiki/Arden_Buck_equation
 [2]: https://en.wikipedia.org/wiki/Dew_point#Calculating_the_dew_point
 [3]: https://journals.ametsoc.org/doi/pdf/10.1175/JAMC-D-11-0143.1
+[4]: https://vanderbilt.box.com/s/s85evxq7gk9mq43i74tjhrlormki18tx

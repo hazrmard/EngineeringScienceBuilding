@@ -42,13 +42,10 @@ The documentation is divided into a discussion of background concepts in physics
 Requires python 3.7. However, python 3.5+ shoould work fine. To install dependencies:
 
 ```bash
-> pip install -r requirements.txt
-# or
-> conda install --file requirements.txt
+conda env create -f dev.yml  # for development
 ```
 
 One requirement is `IPyVolume` for 3D plots. See installation instructions [here][2].
-
 
 Saving GIFs using `IPyVolume` requires [ImageMagick][1] with legacy options (i.e. the `convert.exe` command) enabled.
 
