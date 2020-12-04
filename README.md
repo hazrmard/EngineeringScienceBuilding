@@ -10,7 +10,13 @@ Smart control of HVAC systems using data-driven methods.
 
 ## About
 
-This repository contains code for analysis and control of various HVAC systems at Engineering Science Building.
+This repository contains code for analysis and control of various HVAC systems at Engineering Science Building. It contains:
+
+1. Controller scripts which are run in production.
+
+2. Jupyter notebooks used for data analysis and machine learning.
+
+3. Python packages for data-preprocessing and defining various functions for the above 2.
 
 ## Installation and Use
 
@@ -20,7 +26,7 @@ This repository can be downloaded via `git clone` or [directly as a zip file her
 
 ### Installation for ESB condenser water control
 
-The controller imports measurements from BDX (Buildinglogix Data eXchange), and writes a setpoint to a text file. Access to BDX requires login credentials.
+The controller (`src/controller.py`) imports measurements from BDX (Buildinglogix Data eXchange), and writes a setpoint to a text file. Access to BDX requires login credentials.
 
 To run the controller, (1) review control settings, (2) create the production environment, (3) activate it, and (4) call the script.
 
@@ -80,15 +86,19 @@ Example commands:
 conda activate esb-prod
 
 # Take action every 300s and output to out.txt. Logs default to ./logs.txt
+# Uses settings from the default location (src/settings.ini)
+# Writes to default logs file (./logs.txt)
 python src/controller.py --interval 300 --output ./out.txt
 
-# or, this will exit after taking one action as a test run:
+# Or, this will exit after taking one action as a test run:
+# Uses settings from the default location (src/settings.ini)
+# Writes to default logs file (./logs.txt)
 python src/controller.py --interval 300 --output ./out.txt --dry-run
 
-# or, this will read settings from a custom location
-# If settings are provided at command line and in settings file, commandline
+# Or, this will read settings from a custom location
+# If settings are provided at command line and in settings file, command line
 # will take precedence.
-python src/controller.py --interval 300 --output ./out.txt --settings ~/ESB/mysettings.ini
+python src/controller.py --interval 300 --target power --output ./out.txt --settings ~/ESB/mysettings.ini
 
 ```
 
