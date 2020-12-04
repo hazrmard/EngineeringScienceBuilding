@@ -1,5 +1,6 @@
 credentials.txt
 questions.txt
+src/Scratch.ipynb
 *.xlsx
 *.pptx
 *.pdf

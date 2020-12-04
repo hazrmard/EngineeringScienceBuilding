@@ -197,7 +197,7 @@ def get_controller(**settings) -> BaseEstimator:
                 return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
         
         def starting_action(self, X):
-            return np.asarray([X['TempWetBulb'] + np.random.uniform(low=4, high=6)])
+            return np.asarray([X['TempWetBulb'] + self.random.uniform(low=4, high=6)])
 
         def clip_action(self, u, X):
             u = super().clip_action(u, X)

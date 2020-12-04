@@ -1,8 +1,15 @@
 """
-Defines controller classes implementing various approaches.
+Defines controller classes implementing various approaches. The controllers implemented
+here do not use machine learning to make decisions. Although they may optionally employ
+machine-learned models for their decision making logic. Each controller implements
+the following interface:
+
+`predict(state) -> Tuple[action]` or `predict(state) -> action`
+
+
 """
 
-from typing import Union
+from typing import Union, Tuple
 from collections import deque
 
 from sklearn.base import BaseEstimator
@@ -171,17 +178,19 @@ class FeedbackController(BaseEstimator):
 
 class SimpleFeedbackController(BaseEstimator):
 
-    def __init__(self, bounds, stepsize:float=1, window: int=1):
-        self.bounds = np.asarray(bounds)
+    def __init__(self, bounds, stepsize:float=1, window: int=1, seed=None):
+        self.bounds = np.asarray(bounds) # 1D array of (min, max) for setpoint
         self.stepsize = stepsize
         self.window = window
+        self.seed = seed
+        self.random = np.random.RandomState(seed) # pylint: disable=no-member
         self._feedbacks = deque(maxlen=100)
         self._states = deque(maxlen=100)
         self._actions = deque(maxlen=100)
         self._errors = deque(maxlen=100)
 
 
-    def predict(self, X: pd.DataFrame):
+    def predict(self, X: pd.DataFrame) -> Tuple[np.ndarray]:
         feedback = self.feedback(X)
         self._feedbacks.append(feedback)
 
@@ -195,21 +204,27 @@ class SimpleFeedbackController(BaseEstimator):
             a_2, a_1 = self._actions[-1], self._actions[-2]
             f_2, f_1 = self._feedbacks[-1], self._feedbacks[-2]
             # What was the direction of change in action from the last 2 steps?
-            dir_a = np.random.choice([-1, 1]) if np.sign(a_2 - a_1) == 0 else np.sign(a_2 - a_1)
+            dir_a = np.sign(a_2 - a_1)
             # What was the direction of change in feedback from the last 2 steps?
             dir_f = np.sign(f_2 - f_1)
             # Feedback dir, action dir, step action
-            #       -           -           +
-            #       -           +           -
-            #       +           -           -
-            #       +           +           +
-            step_action = self.stepsize * dir_a * dir_f
+            #       0           0          rnd
+            #       0           -          rnd
+            #       0           +          rnd
+            #       -           0          rnd
+            #       -           -           +       dir_f * dir_a
+            #       -           +           -       dir_f * dir_a
+            #       +           0           0       dir_f * dir_a
+            #       +           -           -       dir_f * dir_a
+            #       +           +           +       dir_f * dir_a
+            if (dir_f == 0 or (dir_f < 0 and dir_a == 0)):
+                step_action = self.stepsize * np.random.choice([-1, 1], size=1)
+            else:
+                step_action = self.stepsize * dir_a * dir_f
             action = a_2 + step_action
             action = self.clip_action(action, X)
             
             self._actions.append(action)
-        # print('err: {:8.2f}, d_err: {:8.2f}, T: {:5.2f}, deltaT: {:5.2f}'\
-        #     .format(error, delta_error, action[0], step_action[0]))
         return action,
 
 
