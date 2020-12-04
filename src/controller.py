@@ -12,6 +12,7 @@ import logging
 from logging.handlers import HTTPHandler, BufferingHandler
 import smtplib
 import email
+import csv
 from datetime import datetime, timedelta
 
 # Issue on Windows where python does not catch keyboard interrupt b/c
@@ -39,6 +40,12 @@ DEFAULT_PATHS = dict(
 
 
 def make_arguments() -> ArgumentParser:
+    # If a setting can be overridden by the settings ini file, then the default
+    # should be None. This is because get_settings() assumes a non-None value
+    # means that the setting was explicitly provided as a flag in the command
+    # line and should not be changed.
+    # Actual default values should be stored as variables, or put in the settings
+    # ini file.
     parser = ArgumentParser(description='Condenser set-point optimization script.',
         epilog='Additional settings can be changed from the specified settings ini file.')
     parser.add_argument('-i', '--interval', type=int, required=False, default=None,
@@ -57,6 +64,8 @@ def make_arguments() -> ArgumentParser:
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
+    parser.add_argument('--output-settings', required=False, default=None,
+                        help='Path to optionally write controller settings to a csv.')
     parser.add_argument('-d', '--dry-run', required=False, default=False,
                         action='store_true', help='Exit after one action to test script.')
     parser.add_argument('-n', '--no-network', required=False, default=False,
@@ -67,6 +76,9 @@ def make_arguments() -> ArgumentParser:
 
 
 def get_settings(parsed_args) -> dict:
+    # Combines command line flags with settings parsed from settings ini file.
+    # Command line takes precedence. Values set in command line are not over-
+    # written by ini file.
     settings = {}
     settings.update(vars(parsed_args))
     # try reading them, if error, return previous settings
@@ -88,6 +100,15 @@ def get_settings(parsed_args) -> dict:
     for setting in ('output', 'logs'):
         if settings.get(setting) is None:
             settings[setting] = DEFAULT_PATHS[setting]
+
+    if settings.get('output_settings') not in ('', None):
+        with open(settings['output_settings'], 'w', newline='') as f:
+            # Only these settings are written to the output settings csv
+            keys = ['interval', 'stepsize', 'target', 'window', 'bounds']
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            writer.writerow({k: settings[k] for k in keys})
+
     return settings
 
 
@@ -139,9 +160,9 @@ def make_logger(**settings) -> logging.Logger:
     ctrl_name = settings.get('controller', '')
     ctrl_application = settings.get('application', '')
 
-    if (email_verbosity is not None and \
-        mailhost is not None and \
-        fromaddr is not None and \
+    if (email_verbosity not in ('', None) and \
+        mailhost not in ('', None) and \
+        fromaddr not in ('', None) and \
         len(toaddrs) > 0 and toaddrs[0]!='' and \
         username not in ('', None) and password not in ('', None)):
         

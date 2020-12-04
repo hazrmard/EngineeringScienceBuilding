@@ -179,7 +179,7 @@ class FeedbackController(BaseEstimator):
 class SimpleFeedbackController(BaseEstimator):
 
     def __init__(self, bounds, stepsize:float=1, window: int=1, seed=None):
-        self.bounds = np.asarray(bounds) # 1D array of (min, max) for setpoint
+        self.bounds = np.asarray(bounds) # 2D array of [(min, max)] for setpoint
         self.stepsize = stepsize
         self.window = window
         self.seed = seed
