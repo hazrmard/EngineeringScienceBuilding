@@ -12,7 +12,7 @@
 
 ## Notebooks
 
-* `baseline_condenser`: Using a feedback controller without machine learning to test control of HVAC systems.
+* `baseline_condenser`: Using a feedback controller without machine learning to test control of HVAC systems. This is the demo notebook for `baseline_control.SimpleFeedbackController`.
 
 * `Models-v2`: Generating data-driven models from the [`v2` dataset][2], which has been preprocessed. See `docs/datasets/v1/` for more information.
 

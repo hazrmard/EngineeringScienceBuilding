@@ -70,7 +70,7 @@ def get_settings(parsed_args) -> dict:
     settings = {}
     settings.update(vars(parsed_args))
     # try reading them, if error, return previous settings
-    cfg = ConfigParser()
+    cfg = ConfigParser(allow_no_value=True)
     if parsed_args.settings is None:
         raise ValueError('No settings file provided.')
     cfg.read(parsed_args.settings)
@@ -143,7 +143,7 @@ def make_logger(**settings) -> logging.Logger:
         mailhost is not None and \
         fromaddr is not None and \
         len(toaddrs) > 0 and toaddrs[0]!='' and \
-        username is not None and password is not None):
+        username not in ('', None) and password not in ('', None)):
         
         logger.info('Setting up email logging.')
         class EmailHandler(BufferingHandler):
