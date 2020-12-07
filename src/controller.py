@@ -11,7 +11,6 @@ import threading as th
 import logging
 import csv
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
 
 # Issue on Windows where python does not catch keyboard interrupt b/c
 # scipy/sklearn (using intel MLK installed via anaconda) imports do their own
@@ -25,7 +24,7 @@ import pytz
 from sklearn.base import BaseEstimator
 import bdx
 
-from utils.logging import EmailHandler, RemoteHandler
+from utils.logging import EmailHandler, RemoteHandler, get_logger, make_logger
 
 
 SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,7 +58,7 @@ def make_arguments() -> ArgumentParser:
                         help='Location of settings file.', default=DEFAULTS['settings'])
     parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
-    parser.add_argument('-r', '--logs-server-destination', type=str, required=False, default=None,
+    parser.add_argument('-r', '--logs-server', type=str, required=False, default=None,
                         help='http://host[:port][/path] of remote server to POST logs to.')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
@@ -112,68 +111,6 @@ def get_settings(parsed_args) -> dict:
             writer.writerow({k: settings[k] for k in keys})
 
     return settings
-
-
-
-def get_logger():
-    return logging.getLogger(__name__)
-
-
-
-def make_logger(**settings) -> logging.Logger:
-    logging.captureWarnings(True)
-    logger = get_logger()
-    logger.setLevel(settings['verbosity'])
-    formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
-
-    # File logging
-    handler_file = logging.FileHandler(filename=settings['logs'], mode='a')
-    handler_file.setFormatter(formatter)
-    handler_file.setLevel(settings['logs_file_verbosity'])
-    logger.addHandler(handler_file)
-
-    # Stream logging
-    handler_stream = logging.StreamHandler(stream=sys.stderr)
-    handler_stream.setFormatter(formatter)
-    handler_stream.setLevel(settings['logs_stream_verbosity'])
-    logger.addHandler(handler_stream)
-
-    # HTTP Logging
-    remote_log = settings.get('logs_server_destination')
-    remote_verbosity = settings.get('logs_server_verbosity')
-    if remote_log not in ('', None) and remote_verbosity not in ('', None):
-        parsed = urlparse(remote_log)
-        handler_remote = RemoteHandler(host=parsed.netloc, url=parsed.path, method='POST')
-        handler_remote.setLevel(remote_verbosity)
-        logger.addHandler(handler_remote)
-
-    # Email logging
-    mailhost = settings.get('logs_email_smtp_server')
-    fromaddr = settings.get('logs_email_from')
-    toaddrs = settings.get('logs_email_to', '')
-    username = settings.get('logs_email_username')
-    password = settings.get('logs_email_password')
-    email_verbosity = settings.get('logs_email_verbosity')
-    name = settings.get('controller', '') + settings.get('application', '')
-
-    if (email_verbosity not in ('', None) and \
-        mailhost not in ('', None) and \
-        fromaddr not in ('', None) and \
-        len(toaddrs) > 0 and toaddrs[0]!='' and \
-        username not in ('', None) and password not in ('', None)):
-        
-        logger.info('Setting up email logging.')   
-        handler_email = EmailHandler(name, mailhost, fromaddr, toaddrs,
-            username, password, capacity=settings['logs_email_batchsize'],
-            logger=logger)
-        handler_email.setLevel(email_verbosity)
-        handler_email.setFormatter(formatter)
-        logger.addHandler(handler_email)
-    else:
-        logger.info('Skipping email logging.')
-
-    return logger
 
 
 
