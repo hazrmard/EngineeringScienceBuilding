@@ -9,11 +9,9 @@ import sys
 from pprint import pformat
 import threading as th
 import logging
-from logging.handlers import HTTPHandler, BufferingHandler
-import smtplib
-import email
 import csv
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 # Issue on Windows where python does not catch keyboard interrupt b/c
 # scipy/sklearn (using intel MLK installed via anaconda) imports do their own
@@ -25,16 +23,18 @@ import numpy as np
 import pandas as pd
 import pytz
 from sklearn.base import BaseEstimator
-
 import bdx
+
+from utils.logging import EmailHandler, RemoteHandler
 
 
 SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKING_DIR = os.path.abspath(os.getcwd())
-DEFAULT_PATHS = dict(
+DEFAULTS = dict(
     settings=os.path.join(SOURCECODE_DIR, 'settings.ini'),
     logs=os.path.join(WORKING_DIR, 'log.txt'),
-    output=os.path.join(WORKING_DIR, 'output.txt')
+    output=os.path.join(WORKING_DIR, 'output.txt'),
+    verbosity='INFO'
 )
 
 
@@ -44,8 +44,8 @@ def make_arguments() -> ArgumentParser:
     # should be None. This is because get_settings() assumes a non-None value
     # means that the setting was explicitly provided as a flag in the command
     # line and should not be changed.
-    # Actual default values should be stored as variables, or put in the settings
-    # ini file.
+    # Actual default values should be stored as variables (DEFAULTS), or put in
+    # the settings ini file.
     parser = ArgumentParser(description='Condenser set-point optimization script.',
         epilog='Additional settings can be changed from the specified settings ini file.')
     parser.add_argument('-i', '--interval', type=int, required=False, default=None,
@@ -56,11 +56,11 @@ def make_arguments() -> ArgumentParser:
     parser.add_argument('-o', '--output', type=str, required=False, default=None,
                         help='Location of file to write output to.')
     parser.add_argument('-s', '--settings', type=str, required=False,
-                        help='Location of settings file.', default=DEFAULT_PATHS['settings'])
+                        help='Location of settings file.', default=DEFAULTS['settings'])
     parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
-    parser.add_argument('-r', '--remote-logs', type=str, required=False, default=None,
-                        help='host[:port] of server to POST logs to.')
+    parser.add_argument('-r', '--logs-server-destination', type=str, required=False, default=None,
+                        help='http://host[:port][/path] of remote server to POST logs to.')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
@@ -91,15 +91,17 @@ def get_settings(parsed_args) -> dict:
         if (setting not in settings) or (settings.get(setting) is None):
             if setting in ('stepsize', 'window', 'interval'):
                 settings[setting] = float(value)
+            elif setting in ('logs_email_batchsize',):
+                settings[setting] = int(value)
             elif setting=='bounds':
                 settings[setting] = np.asarray([tuple(map(float, value.split(',')))])
             elif setting=='target':
                 settings[setting] = value.lower()
             else:
                 settings[setting] = value
-    for setting in ('output', 'logs'):
+    for setting in DEFAULTS:
         if settings.get(setting) is None:
-            settings[setting] = DEFAULT_PATHS[setting]
+            settings[setting] = DEFAULTS[setting]
 
     if settings.get('output_settings') not in ('', None):
         with open(settings['output_settings'], 'w', newline='') as f:
@@ -137,18 +139,14 @@ def make_logger(**settings) -> logging.Logger:
     handler_stream.setLevel(settings['logs_stream_verbosity'])
     logger.addHandler(handler_stream)
 
-    # HTTP Logging (TODO)
+    # HTTP Logging
     remote_log = settings.get('logs_server_destination')
     remote_verbosity = settings.get('logs_server_verbosity')
-    if remote_log is not None and remote_verbosity is not None:
-        class RemoteHandler(HTTPHandler):
-            def emit(self, record):
-                return super().emit(record)
-        handler_remote = RemoteHandler(
-            host=remote_log,
-            url='/',
-            method='POST'
-        )
+    if remote_log not in ('', None) and remote_verbosity not in ('', None):
+        parsed = urlparse(remote_log)
+        handler_remote = RemoteHandler(host=parsed.netloc, url=parsed.path, method='POST')
+        handler_remote.setLevel(remote_verbosity)
+        logger.addHandler(handler_remote)
 
     # Email logging
     mailhost = settings.get('logs_email_smtp_server')
@@ -157,8 +155,7 @@ def make_logger(**settings) -> logging.Logger:
     username = settings.get('logs_email_username')
     password = settings.get('logs_email_password')
     email_verbosity = settings.get('logs_email_verbosity')
-    ctrl_name = settings.get('controller', '')
-    ctrl_application = settings.get('application', '')
+    name = settings.get('controller', '') + settings.get('application', '')
 
     if (email_verbosity not in ('', None) and \
         mailhost not in ('', None) and \
@@ -166,33 +163,10 @@ def make_logger(**settings) -> logging.Logger:
         len(toaddrs) > 0 and toaddrs[0]!='' and \
         username not in ('', None) and password not in ('', None)):
         
-        logger.info('Setting up email logging.')
-        class EmailHandler(BufferingHandler):
-            def __init__(self, capacity, flushLevel=logging.ERROR):
-                super().__init__(capacity)
-                self.flushLevel = flushLevel
-                self.smtp = smtplib.SMTP(mailhost, smtplib.SMTP_PORT)
-                self.smtp.starttls()
-                logger.info(self.smtp.login(username, password))
-
-            def flush(self):
-                maxlevel = max(self.buffer, key=lambda r: r.levelno).levelname
-                
-                msg = email.message.EmailMessage()
-                msg['from'] = fromaddr
-                msg['to'] = toaddrs
-                msg['subject'] = ctrl_application + ' ' + ctrl_name + ' ' + maxlevel
-                msg_str = ''
-                for record in self.buffer:
-                    msg_str += self.format(record) + '\n'
-                msg.set_content(msg_str)
-                self.smtp.send_message(msg)
-                super().flush()
-
-            def shouldFlush(self, record):
-                return super().shouldFlush(record) or record.levelno >= self.flushLevel
-        
-        handler_email = EmailHandler(capacity=int(settings.get('logs_email_batchsize')))
+        logger.info('Setting up email logging.')   
+        handler_email = EmailHandler(name, mailhost, fromaddr, toaddrs,
+            username, password, capacity=settings['logs_email_batchsize'],
+            logger=logger)
         handler_email.setLevel(email_verbosity)
         handler_email.setFormatter(formatter)
         logger.addHandler(handler_email)

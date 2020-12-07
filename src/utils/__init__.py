@@ -6,3 +6,4 @@ abstract generic operations.
 
 from .type_operations import *
 from .training import *
+from .logging import EmailHandler, RemoteHandler
