@@ -9,6 +9,7 @@ dependencies:
   - xlrd
   - tqdm
   - scikit-learn
+  - dash=1.17.0
   - pip
   - pip:
     - python-dateutil
