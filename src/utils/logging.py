@@ -20,12 +20,13 @@ def get_logger(name: str=None) -> logging.Logger:
 
 
 
-def make_logger(enable='all', logger=None, **settings) -> logging.Logger:
+def make_logger(enable='all', logger=None, formatter=None, **settings) -> logging.Logger:
     logging.captureWarnings(True)
     logger = get_logger() if logger is None else logger
     logger.setLevel(settings['verbosity'])
-    formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
+    if not isinstance(formatter, logging.Formatter):
+        formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s',
+                                      datefmt='%Y-%m-%d %H:%M:%S')
 
     # File logging
     if enable=='all' or 'file' in enable:

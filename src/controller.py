@@ -29,11 +29,12 @@ from utils.logging import EmailHandler, RemoteHandler, get_logger, make_logger
 
 SOURCECODE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKING_DIR = os.path.abspath(os.getcwd())
+# Settings that are mandatory for the script. If not provided in command line
+# or ini, these defaults are used.
 DEFAULTS = dict(
     settings=os.path.join(SOURCECODE_DIR, 'settings.ini'),
     logs=os.path.join(WORKING_DIR, 'log.txt'),
-    output=os.path.join(WORKING_DIR, 'output.txt'),
-    verbosity='INFO'
+    output=os.path.join(WORKING_DIR, 'output.txt')
 )
 
 
@@ -74,7 +75,7 @@ def make_arguments() -> ArgumentParser:
 
 
 
-def get_settings(parsed_args) -> dict:
+def get_settings(parsed_args, section: str='DEFAULT', write_settings=False) -> dict:
     # Combines command line flags with settings parsed from settings ini file.
     # Command line takes precedence. Values set in command line are not over-
     # written by ini file.
@@ -85,12 +86,13 @@ def get_settings(parsed_args) -> dict:
     if parsed_args.settings is None:
         raise ValueError('No settings file provided.')
     cfg.read(parsed_args.settings)
-    for setting, value in cfg['DEFAULT'].items():
-        # Only update settings which were not specified in the command line
+    for setting, value in cfg[section].items():
+        # Only update settings which were not specified in the command line,
+        # and which had non empty values
         if (setting not in settings) or (settings.get(setting) is None):
             if setting in ('stepsize', 'window', 'interval'):
                 settings[setting] = float(value)
-            elif setting in ('logs_email_batchsize',):
+            elif setting in ('logs_email_batchsize', 'port'):
                 settings[setting] = int(value)
             elif setting=='bounds':
                 settings[setting] = np.asarray([tuple(map(float, value.split(',')))])
@@ -98,11 +100,13 @@ def get_settings(parsed_args) -> dict:
                 settings[setting] = value.lower()
             else:
                 settings[setting] = value
+    # Add default settings if they did not have a value in the ini or command line.
+    # These are settings that must be set in any case.
     for setting in DEFAULTS:
         if settings.get(setting) is None:
             settings[setting] = DEFAULTS[setting]
 
-    if settings.get('output_settings') not in ('', None):
+    if settings.get('output_settings') not in ('', None) and write_settings:
         with open(settings['output_settings'], 'w', newline='') as f:
             # Only these settings are written to the output settings csv
             keys = ['interval', 'stepsize', 'target', 'window', 'bounds']
@@ -186,7 +190,6 @@ def put_control_action(action: np.ndarray, **settings):
 
 
 
-
 if __name__ == '__main__':
     try:
         parser = make_arguments()
@@ -206,7 +209,7 @@ if __name__ == '__main__':
         while not ev_halt.isSet():
             try:
                 start = datetime.now(pytz.utc)
-                settings = get_settings(args)
+                settings = get_settings(args, write_settings=True)
                 update_controller(ctrl, **settings)
                 prev_end = start - 2*timedelta(seconds=int(settings['interval']))
                 if settings['no_network']:
