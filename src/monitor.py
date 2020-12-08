@@ -14,7 +14,8 @@ import plotly.express as px
 from utils.logging import get_logger, make_logger
 from controller import get_settings, DEFAULTS
 
-DEFAULTS['logs_server'] = 'http://127.0.0.1:5000/log'
+DEFAULTS['host'] = '0.0.0.0'
+DEFAULTS['port'] = 5000
 
 
 dapp = Dash(__name__)   # the Dash application wrapper
@@ -48,8 +49,10 @@ def make_arguments() -> ArgumentParser:
                         help='Location of settings file.', default=DEFAULTS['settings'])
     parser.add_argument('-l', '--logs', type=str, required=False, default=None,
                         help='Location of file to write logs to.')
-    parser.add_argument('-r', '--logs-server', type=str, required=False, default=None,
-                        help='http://host[:port][/path] of remote server to POST logs to.')
+    parser.add_argument('-p', '--port', type=int, required=False, default=None,
+                        help='Port number of server to listen on.')
+    parser.add_argument('--host', type=str, required=False, default=None,
+                        help='Host address of server to listen on. e.g. 0.0.0.0')
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))

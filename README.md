@@ -28,11 +28,11 @@ This repository can be downloaded via `git clone` or [directly as a zip file her
 
 The controller (`src/controller.py`) imports measurements from BDX (Buildinglogix Data eXchange), and writes a setpoint to a text file. Access to BDX requires login credentials.
 
-To run the controller, (1) review control settings, (2) create the production environment, (3) activate it, and (4) call the script.
+To run the controller, (1) review control settings, (2) create/update the production environment, (3) activate it, call the script.
 
 The environment needs to be created only once. Every time after, the environment is activated and the scipt is called.
 
-**Review settings before running the controller**
+#### 1. Review settings before running the controller
 
 The controller settings can be specified in a settings file. The default settings file is located in `src/settings.ini`. A file can be created at another location but the file path must be specified when running the controller script. To create a custom settings file, just copy `src/settings.ini` to a location of your choice.
 
@@ -44,14 +44,22 @@ The controller settings can be specified in a settings file. The default setting
 
 4. Choose the acceptable setpoint bounds in the `bounds` setting. The bounds are additionaly clipped by the Wetbulb temperature internally which is the lower limit on what is physically possible.
 
-**Optional Features**
+#### 2. Create/update the production environment
 
-The controller is set up to send logs via email. It supports the SMTP protocol for email. The sending and receiving email addresses, email credentials, and server settings can be specified in the settings file.
+Using `conda` (Anaconda/Miniconda package manager):
 
-**Controller interface**
+```bash
+# Create new environment
+conda env create -f=./environment.yml
+# OR, update production environment
+conda env update -f=./environment.yml
+```
+
+#### 3. Activate environment, run scripts
 
 ```bash
 python src/controller.py --help
+
 usage: controller.py [-h] [-i INTERVAL] [-t {power,temperature}] [-o OUTPUT]
                      [-s SETTINGS] [-l LOGS] [-r REMOTE_LOGS]
                      [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-d] [-n]
@@ -82,6 +90,9 @@ Additional settings can be changed from the specified settings ini file.
 Example commands:
 
 ```bash
+# update production environment
+conda env update -f environment.yml
+
 # activate production environment
 conda activate esb-prod
 
@@ -100,6 +111,33 @@ python src/controller.py --interval 300 --output ./out.txt --dry-run
 # will take precedence.
 python src/controller.py --interval 300 --target power --output ./out.txt --settings ~/ESB/mysettings.ini
 
+```
+
+### Monitoring controller
+
+Besides logs written to error stream and a local file, the controller can also communicate with a HTTP server or send emails.
+
+The code comes with a `src/monitor.py` script that can listen in as a HTTP server to updates sent by `src/controller.py` running on a different machine. Settings can be specified in the settings ini file. For duplicate settings, the monitor falls back on values in the `DEFAULTS` section in the ini for the controller if it cannot find them in the `MONITOR` section.
+
+```bash
+$ python src/monitor.py --help
+
+usage: monitor.py [-h] [-s SETTINGS] [-l LOGS] [-p PORT] [--host HOST]
+                  [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
+
+Monitor for condenser set-point optimization script.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SETTINGS, --settings SETTINGS
+                        Location of settings file.
+  -l LOGS, --logs LOGS  Location of file to write logs to.
+  -p PORT, --port PORT  Port number of server to listen on.
+  --host HOST           Host address of server to listen on. e.g. 0.0.0.0
+  -v {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --verbosity {CRITICAL,ERROR,WARNING,INFO,DEBUG}
+                        Verbosity level.
+
+Additional settings can be changed from the specified settings ini file.
 ```
 
 ### Development
