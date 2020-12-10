@@ -125,13 +125,21 @@ def get_controller(**settings) -> BaseEstimator:
         def __init__(self, bounds, stepsize, window, target):
             super().__init__(bounds=bounds, stepsize=stepsize, window=window)
             self.target = target
-    
+
         def feedback(self, X):
             if self.target == 'temperature':
-                return -X['TempCondIn']
+                f = -X['TempCondIn']
+                if np.isnan(f):
+                    raise ValueError('TempCondIn is NaN. Could not calculate feedback.')
+                return f
             else:
-                return - X['PowChi'] - X['PowFanA'] - X['PowFanB'] - X['PowConP']
-        
+                f = 0.
+                for p in ('PowChi', 'PowFanA', 'PowFanB', 'PowConP'):
+                    f -= X[p]
+                    if np.isnan(p):
+                        raise ValueError('{} is NaN. Could not calculate feedback.'.format(p))
+                return f
+
         def starting_action(self, X):
             return np.asarray([X['TempWetBulb'] + self.random.uniform(low=4, high=6)])
 
@@ -239,7 +247,7 @@ if __name__ == '__main__':
                 else:
                     ev_halt.wait(float(settings['interval']) - \
                                 (datetime.now(pytz.utc).timestamp() - start.timestamp()))
-                
+
 
     try:
         thread = th.Thread(target=run, daemon=False)
