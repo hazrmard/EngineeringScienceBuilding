@@ -47,6 +47,7 @@ def make_logger(enable='all', logger=None, formatter=None, **settings) -> loggin
         remote_log = settings.get('logs_server')
         remote_verbosity = settings.get('logs_server_verbosity')
         if remote_log not in ('', None) and remote_verbosity not in ('', None):
+            logger.info('Remote logging to %s' % remote_log)
             parsed = urlparse(remote_log)
             handler_remote = RemoteHandler(host=parsed.netloc, url=parsed.path, method='POST')
             handler_remote.setLevel(remote_verbosity)

@@ -4,6 +4,7 @@ messages sent via HTTP/POST requests.
 """
 
 from argparse import ArgumentParser, Namespace
+import logging
 
 from flask import request
 from dash import Dash
@@ -31,8 +32,8 @@ dapp.layout = html.Div([
 def log():
     logger = get_logger('monitor')
     rdict = request.form
-    ip = request.environ.ge('HTTP_X_REAL_IP', request.remote_addr)
-    logger.log(int(rdict['levelno']), 'From: %s. %s' % (ip, rdict['message']))
+    ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s. %s' % (ip, rdict.get('message', 'NO_MESSAGE')))
     return 'OK'
 
 
@@ -67,5 +68,5 @@ if __name__ == '__main__':
     settings = get_settings(args, section='MONITOR')
     logger = get_logger('monitor')
     logger = make_logger(enable=('stream', 'file', 'email'), logger=logger, **settings)
-    logger.info('Started monitoring...')
+    logger.info('Started monitoring on %s:%s ...' % (settings['host'], settings['port']))
     dapp.run_server(host=settings['host'], port=settings['port'], debug=True)
