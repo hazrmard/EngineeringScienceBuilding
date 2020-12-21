@@ -61,8 +61,9 @@ conda env update -f=./environment.yml
 python src/controller.py --help
 
 usage: controller.py [-h] [-i INTERVAL] [-t {power,temperature}] [-o OUTPUT]
-                     [-s SETTINGS] [-l LOGS] [-r REMOTE_LOGS]
-                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-d] [-n]
+                     [-s SETTINGS] [-l LOGS] [-r LOGS_SERVER]
+                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
+                     [--output-settings OUTPUT_SETTINGS] [-d] [-n]
 
 Condenser set-point optimization script.
 
@@ -77,10 +78,13 @@ optional arguments:
   -s SETTINGS, --settings SETTINGS
                         Location of settings file.
   -l LOGS, --logs LOGS  Location of file to write logs to.
-  -r REMOTE_LOGS, --remote-logs REMOTE_LOGS
-                        host[:port] of server to POST logs to.
+  -r LOGS_SERVER, --logs-server LOGS_SERVER
+                        http://host[:port][/path] of remote server to POST
+                        logs to.
   -v {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --verbosity {CRITICAL,ERROR,WARNING,INFO,DEBUG}
                         Verbosity level.
+  --output-settings OUTPUT_SETTINGS
+                        Path to optionally write controller settings to a csv.
   -d, --dry-run         Exit after one action to test script.
   -n, --no-network      For testing code execution: no API calls.
 

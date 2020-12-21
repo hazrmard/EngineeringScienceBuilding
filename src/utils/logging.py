@@ -94,8 +94,8 @@ class EmailHandler(BufferingHandler):
     buffer: List
         A list of logging.LogRecord messages
     """
-    
-    
+
+
     def __init__(self, name: str, mailhost: str, fromaddr: str, toaddrs: list,
             username: str, password: str, capacity: int,
             flushLevel:str=logging.CRITICAL, logger: logging.Logger=None):
@@ -131,7 +131,7 @@ class EmailHandler(BufferingHandler):
         self.smtp.starttls()
         if isinstance(logger, logging.Logger):
             logger.info(self.smtp.login(username, password))
-        
+
 
     def flush(self):
         """

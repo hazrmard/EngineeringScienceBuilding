@@ -31,7 +31,8 @@ dapp.layout = html.Div([
 def log():
     logger = get_logger('monitor')
     rdict = request.form
-    logger.log(int(rdict['levelno']), rdict['message'])
+    ip = request.environ.ge('HTTP_X_REAL_IP', request.remote_addr)
+    logger.log(int(rdict['levelno']), 'From: %s. %s' % (ip, rdict['message']))
     return 'OK'
 
 
