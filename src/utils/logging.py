@@ -195,6 +195,20 @@ class RemoteHandler(HTTPHandler):
         return super().mapLogRecord(record)
 
 
+    def emit(self, record: logging.LogRecord):
+        """
+        Send the log to the server. If an error occurs, silently fail.
+
+        Parameters
+        ----------
+        record : logging.LogRecord
+        """
+        try:
+            super().emit(self, record)
+        except Exception as exc:
+            pass
+
+
 
 class UTCFormatter(logging.Formatter):
     """

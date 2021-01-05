@@ -30,7 +30,7 @@ dapp.layout = html.Div([
 
 @app.route('/log', methods=('POST',))   # endpoint for POST requests
 def log():
-    logger = get_logger('monitor')
+    logger = get_logger()
     rdict = request.form
     ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
     logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s. %s' % (ip, rdict.get('message', 'NO_MESSAGE')))
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     parser = make_arguments()
     args = parser.parse_args()
     settings = get_settings(args, section='MONITOR')
-    logger = get_logger('monitor')
+    logger = get_logger()
     logger = make_logger(enable=('stream', 'file', 'email'), logger=logger, **settings)
     logger.info('Started monitoring on %s:%s ...' % (settings['host'], settings['port']))
     dapp.run_server(host=settings['host'], port=settings['port'], debug=True)

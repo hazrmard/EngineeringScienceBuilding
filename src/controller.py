@@ -107,12 +107,15 @@ def get_settings(parsed_args, section: str='DEFAULT', write_settings=False) -> d
             settings[setting] = DEFAULTS[setting]
 
     if settings.get('output_settings') not in ('', None) and write_settings:
-        with open(settings['output_settings'], 'w', newline='') as f:
-            # Only these settings are written to the output settings csv
-            keys = ['interval', 'stepsize', 'target', 'window', 'bounds']
-            writer = csv.DictWriter(f, fieldnames=keys)
-            writer.writeheader()
-            writer.writerow({k: settings[k] for k in keys})
+        try:
+            with open(settings['output_settings'], 'w', newline='') as f:
+                # Only these settings are written to the output settings csv
+                keys = ['interval', 'stepsize', 'target', 'window', 'bounds']
+                writer = csv.DictWriter(f, fieldnames=keys)
+                writer.writeheader()
+                writer.writerow({k: settings[k] for k in keys})
+        except Exception as exc:
+            get_logger().error(msg=exc, exc_info=True)
 
     return settings
 
@@ -242,7 +245,7 @@ if __name__ == '__main__':
                 ev_halt.set()
             except Exception as exc:
                 logger.error(msg=exc, exc_info=True)
-                if settings['dry_run']:
+                if settings.get('dry_run', False):
                     ev_halt.set()
                 else:
                     ev_halt.wait(float(settings['interval']) - \
