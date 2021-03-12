@@ -3,6 +3,8 @@ title: Industry terms
 order: 1
 ---
 
+A list of common abbreviations can be found [here][5].
+
 ## HVAC
 
 [*HVAC*][1] stands for Heating, Ventilation, and Air Conditioning.
@@ -60,3 +62,5 @@ It is the inverse of COP and EER measurements. The lower, the better.
 [2]: https://en.wikipedia.org/wiki/Ton_of_refrigeration
 [3]: https://www.engineeringtoolbox.com/cooling-loads-d_665.html
 [4]: https://en.wikipedia.org/wiki/Seasonal_energy_efficiency_ratio
+[5]: https://highperformancehvac.com/air-conditioning-heating-terms-definitions-acronyms/
+
