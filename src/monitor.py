@@ -58,6 +58,8 @@ def make_arguments() -> ArgumentParser:
     parser.add_argument('-v', '--verbosity', type=str, required=False, default=None,
                         help='Verbosity level.',
                         choices=('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'))
+    parser.add_argument('-m', '--message', type=str, required=False, default=None,
+                        help=('Compose a test INFO message to send to a running monitor.'))
     return parser
 
 
@@ -65,8 +67,14 @@ def make_arguments() -> ArgumentParser:
 if __name__ == '__main__':
     parser = make_arguments()
     args = parser.parse_args()
-    settings = get_settings(args, section='MONITOR')
-    logger = get_logger()
-    logger = make_logger(enable=('stream', 'file', 'email'), logger=logger, **settings)
-    logger.info('Started monitoring on %s:%s ...' % (settings['host'], settings['port']))
-    dapp.run_server(host=settings['host'], port=settings['port'], debug=True)
+    if args.message is not None:
+        settings = get_settings(args, section='DEFAULT')
+        logger = get_logger()
+        logger = make_logger(enable=('stream', 'email', 'http'), logger=logger, **settings)
+        logger.info(args.message)
+    else:
+        settings = get_settings(args, section='MONITOR')
+        logger = get_logger()
+        logger = make_logger(enable=('stream', 'file'), logger=logger, **settings)
+        logger.info('Started monitoring on %s:%s ...' % (settings['host'], settings['port']))
+        dapp.run_server(host=settings['host'], port=settings['port'], debug=True)

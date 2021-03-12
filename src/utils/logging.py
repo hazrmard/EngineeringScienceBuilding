@@ -204,7 +204,7 @@ class RemoteHandler(HTTPHandler):
         record : logging.LogRecord
         """
         try:
-            super().emit(self, record)
+            super().emit(record)
         except Exception as exc:
             pass
 
