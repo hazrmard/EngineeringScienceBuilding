@@ -32,6 +32,18 @@ To run the controller, (1) review control settings, (2) create/update the produc
 
 The environment needs to be created only once. Every time after, the environment is activated and the scipt is called.
 
+#### 0. Quick start
+
+Refer to this section if you're aware of how the script is set up, and you just want to restart it.
+
+```
+cd CODE_DIRECTORY                             # navigate to code directory
+git pull                                      # update code from remote branch
+conda env update -f=./environment.yml         # update virtual environment (assuming already created)
+conda activate esb-prod                       # activate environment
+python src/controller.py -s src/settings.ini  # run script, assuming username/password are set in settings.ini
+```
+
 #### 1. Review settings before running the controller
 
 The controller settings can be specified in a settings file. The default settings file is located in `src/settings.ini`. A file can be created at another location but the file path must be specified when running the controller script. To create a custom settings file, just copy `src/settings.ini` to a location of your choice.
