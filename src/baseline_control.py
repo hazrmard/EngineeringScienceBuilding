@@ -190,7 +190,7 @@ class SimpleFeedbackController(BaseEstimator):
         self._errors = deque(maxlen=100)
 
 
-    def predict(self, X: pd.DataFrame) -> Tuple[np.ndarray]:
+    def predict(self, X: pd.DataFrame) -> Tuple[np.ndarray, float]:
         feedback = self.feedback(X)
         self._feedbacks.append(feedback)
 
@@ -225,7 +225,7 @@ class SimpleFeedbackController(BaseEstimator):
             action = self.clip_action(action, X)
             
             self._actions.append(action)
-        return action,
+        return action, feedback
 
 
     def feedback(self, X: pd.DataFrame) -> float:

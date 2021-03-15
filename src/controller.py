@@ -148,7 +148,7 @@ def get_controller(**settings) -> BaseEstimator:
 
         def clip_action(self, u, X):
             u = super().clip_action(u, X)
-            return np.clip(u, a_min=X['TempWetBulb'], a_max=None)
+            return np.clip(u, a_min=X['TempWetBulb'], a_max=X['TempCondOut'])
 
     stepsize, window = settings['stepsize'], settings['window']
     setpoint_bounds = settings['bounds']
@@ -229,8 +229,9 @@ if __name__ == '__main__':
                     state = get_current_state(prev_end, start, **settings)
                 if state is not None:
                     logger.debug('State\n{}'.format(state))
-                    action, = ctrl.predict(state)
-                    logger.info('Setpoint: {}'.format(action))
+                    action, *diag = ctrl.predict(state)
+                    feedback = diag[0] if len(diag) > 0 else -1
+                    logger.info('Last feedback: {:.2f} \tSetpoint: {:.2f}'.format(feedback, action[0]))
                     put_control_action(action, **settings)
                 if settings['dry_run']:
                     logger.info('Dry run finished. Halting.')
