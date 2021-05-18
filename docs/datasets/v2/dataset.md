@@ -10,12 +10,13 @@ The v2 dataset is created by downloading trends created in the BuildingLogiX Dat
 2. 2623 Chiller 2
 3. [2621 Cooling Tower 1][6]
 4. [2622 Cooling Tower 2][5]
-5. [2422 ESB HVAC Control (Chiller 1)][4]
-6. 2841 ESB HVAC Control 2 (Chiller 2)
+5. [2422 ESB HVAC Control (Chiller 1)][4] (Cooling Tower 1 + Chiller 1)
+6. 2841 ESB HVAC Control 2 (Chiller 2) (Cooling Tower 2 + Chiller 2)
+7. 3481 Python CDW Control (Python controller setpoint for condenser water temperature)
 
 Trends can be downloaded using the [`bdx`][2] python package.
 
-The naming conforms to the same conventions as in [`v1` dataset][3]. No preprocessing is done to convert to SI units.
+The naming usually conforms to the same conventions as in [`v1` dataset][3]. No preprocessing is done to convert to SI units.
 
 
 [1]: https://facilities.app.vanderbilt.edu/trendview

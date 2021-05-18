@@ -2,7 +2,7 @@
 2623 ESB Chiller 2
 2621 ESB Cooling Tower 1
 2622 ESB Cooling Tower 2
-2422 ESB HVAC Control (Chiller 1)
-2841 HVAC Control 2 (Chiller 2)
+2422 ESB HVAC Control (Cooling Tower 1 + Chiller 1)
+2841 HVAC Control 2 (Cooling Tower 2 + Chiller 2)
 
 3841 Kissam Cooling Tower

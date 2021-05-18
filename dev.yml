@@ -11,6 +11,9 @@ dependencies:
   - jupyter_contrib_nbextensions
   - tqdm
   - scikit-learn
+  - pytorch::pytorch=1.8
+  - cudatoolkit=10.2
+  - tslearn
   - dash=1.17.0
   - pip
   - pip:
@@ -18,4 +21,3 @@ dependencies:
     - ipyvolume
     - gym
     - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.5
-    - dash==1.17.0

@@ -184,6 +184,8 @@ Each cooling tower/chiller system has the following parameters:
 
 19. `FreqFanB`: Spinning rate of fan B in Hertz.
 
+20. `Tonnage`: Cooling load on chiller (tons).
+
 And the following derived fields:
 
 1. `PowIn`: Total input power calculated as a sum of all power fields.
