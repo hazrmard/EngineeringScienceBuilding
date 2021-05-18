@@ -2,7 +2,7 @@
 Statistical analysis functions.
 """
 
-
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -65,7 +65,7 @@ def mutual_information(df: pd.DataFrame, bins: int=32) -> np.ndarray:
 
 
 
-def temporal_correlations(features, lags, targets=None) -> np.ndarray:
+def temporal_correlations(features: np.ndarray, lags: Iterable, targets: np.ndarray=None) -> np.ndarray:
     targets = features if targets is None else targets
     numf = features.shape[1] if features.ndim == 2 else 1
     numt = targets.shape[1] if targets.ndim == 2 else 1
