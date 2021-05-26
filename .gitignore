@@ -8,6 +8,7 @@ src/Scratch.ipynb
 *.txt
 local.ini
 desktop.ini
+bdxcredentials.ini
 
 .vscode/
 src/bin/*
