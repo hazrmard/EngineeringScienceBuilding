@@ -36,6 +36,8 @@ The documentation is divided into a discussion of background concepts in physics
 
 7. [Relationships](7-relationships.md)
 
+8. [ESB Controller Deployment Notes](ESB-Controller-Notes.md)
+
 
 ## Installation
 
@@ -53,3 +55,10 @@ Currently `IPyVolume` does not work with Jupyter Lab. Instead use Jupyter Notebo
 
 [1]: https://www.imagemagick.org/script/index.php
 [2]: https://ipyvolume.readthedocs.io/en/latest/install.html
+
+
+## Deployment
+
+The controller is currently deployed for Engineering Science Building using a rudimentary feedback logic. This logic is contained in the `controller.py` script in the repository. This is the first step to gathering data to generate data-driven models. A log of various events during deployment is maintained [here](ESB-Controller-Notes.md).
+
+To read instructions on deployment, read the (you guessed it) [README](https://git.isis.vanderbilt.edu/SmartBuildings/EngineeringScienceBuilding).
