@@ -10,6 +10,8 @@
 
 * `controller`: The script used to control ESB condenser water temperature. Main entry point for production usage. See Repository README for more details.
 
+* `controllers`: Defines various controllers on a per-application basis. The controllers follow a similar interface so they can be imported into the `controller.py` script based on the `.ini` settings.
+
 ## Notebooks
 
 * `baseline_condenser`: Using a feedback controller without machine learning to test control of HVAC systems. This is the demo notebook for `baseline_control.SimpleFeedbackController`.

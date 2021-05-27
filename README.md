@@ -38,23 +38,31 @@ Refer to this section if you're aware of how the script is set up, and you just 
 
 ```
 cd CODE_DIRECTORY                             # navigate to code directory
+git reset --hard                              # ignore local changes
 git pull                                      # update code from remote branch
 conda env update -f=./environment.yml         # update virtual environment (assuming already created)
 conda activate esb-prod                       # activate environment
-python src/controller.py -s src/settings.ini  # run script, assuming username/password are set in settings.ini
+python src/controller.py -s src/settings.ini  # run script, giving path to settings file
 ```
 
 #### 1. Review settings before running the controller
 
 The controller settings can be specified in a settings file. The default settings file is located in `src/settings.ini`. A file can be created at another location but the file path must be specified when running the controller script. To create a custom settings file, just copy `src/settings.ini` to a location of your choice.
 
-1. Fill in the `username` and `password` values for accessing BDX in the settings file.
+1. Fill in the `username` and `password` values for accessing BDX in the settings file, OR:
 
-2. The locations of the `output` and `logs` files can also be specified in settings. Or they can be provided as commandline arguments at runtime.
+    1. Optionally, create `src/bdxcredentials.ini` with these contents instead of populating settings fields. This will prevent the `settings.ini` file credentials from being erased when the repository is updated from a remote branch.
+    ```
+    [DEFAULT]
+    username = USERNAME
+    password = PASSWORD
+    ```
 
-3. Choose optimization target by specifying `power` or `temperature` in `target` setting.  `power` tries to mimimize the sum of chiller, fan, and condenser pump powers. `temperature` minimizes condenser input water temperature.
+2. Choose which controllers are to be run by adding a comma separated list of sections in the `controllers` field. For e.g. `controllers=CONTROLLER.ESB,CONTROLLER.KISSAM`. Fill their respective fields as well.
 
-4. Choose the acceptable setpoint bounds in the `bounds` setting. The bounds are additionaly clipped by the Wetbulb temperature internally which is the lower limit on what is physically possible.
+3. Change verbosity settings.
+
+4. Override any default settings in any non-`DEFAULT` section. For e.g. if `verbosity` is specified under `DEFAULT` and `CONTROLLER.ESB`, then for the ESB controller, the more specific setting will take effect over default.
 
 #### 2. Create/update the production environment
 
@@ -72,21 +80,13 @@ conda env update -f=./environment.yml
 ```bash
 python src/controller.py --help
 
-usage: controller.py [-h] [-i INTERVAL] [-t {power,temperature}] [-o OUTPUT]
-                     [-s SETTINGS] [-l LOGS] [-r LOGS_SERVER]
-                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
-                     [--output-settings OUTPUT_SETTINGS] [-d] [-n]
+usage: controller.py [-h] [-s SETTINGS] [-l LOGS] [-r LOGS_SERVER]
+                     [-v {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-d] [-n]
 
 Condenser set-point optimization script.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i INTERVAL, --interval INTERVAL
-                        Interval in seconds to apply control action.
-  -t {power,temperature}, --target {power,temperature}
-                        Optimization target for condenser water setpoint.
-  -o OUTPUT, --output OUTPUT
-                        Location of file to write output to.
   -s SETTINGS, --settings SETTINGS
                         Location of settings file.
   -l LOGS, --logs LOGS  Location of file to write logs to.
@@ -95,8 +95,6 @@ optional arguments:
                         logs to.
   -v {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --verbosity {CRITICAL,ERROR,WARNING,INFO,DEBUG}
                         Verbosity level.
-  --output-settings OUTPUT_SETTINGS
-                        Path to optionally write controller settings to a csv.
   -d, --dry-run         Exit after one action to test script.
   -n, --no-network      For testing code execution: no API calls.
 
@@ -112,20 +110,15 @@ conda env update -f environment.yml
 # activate production environment
 conda activate esb-prod
 
-# Take action every 300s and output to out.txt. Logs default to ./logs.txt
+# This will exit after taking one action as a test run:
 # Uses settings from the default location (src/settings.ini)
 # Writes to default logs file (./logs.txt)
-python src/controller.py --interval 300 --output ./out.txt
-
-# Or, this will exit after taking one action as a test run:
-# Uses settings from the default location (src/settings.ini)
-# Writes to default logs file (./logs.txt)
-python src/controller.py --interval 300 --output ./out.txt --dry-run
+python src/controller.py --dry-run
 
 # Or, this will read settings from a custom location
 # If settings are provided at command line and in settings file, command line
 # will take precedence.
-python src/controller.py --interval 300 --target power --output ./out.txt --settings ~/ESB/mysettings.ini
+python src/controller.py --settings ~/ESB/mysettings.ini
 
 ```
 

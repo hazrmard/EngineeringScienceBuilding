@@ -79,3 +79,12 @@ def temporal_correlations(features: np.ndarray, lags: Iterable, targets: np.ndar
         corr = np.corrcoef(f, t, rowvar=False)
         corrs[i] = corr[:numf, numf:]
     return corrs
+
+
+
+def match_histogram(arr_of, arr_to, bins):
+    hist, binsh = np.histogramdd(arr_of, density=True, bins=bins)
+    ref, binsr = np.histogramdd(arr_to, density=True, bins=bins)
+    hist = hist if np.sum(hist)==1. else hist / np.sum(hist)
+    ref = ref if np.sum(ref)==1. else ref / np.sum(ref)
+    factor = ref / hist  # [up, down]-sampling ratio

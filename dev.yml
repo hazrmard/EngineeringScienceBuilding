@@ -20,4 +20,4 @@ dependencies:
     - python-dateutil
     - ipyvolume
     - gym
-    - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.5
+    - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.6
