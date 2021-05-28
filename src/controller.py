@@ -156,7 +156,8 @@ def run(controller_name: str, ev_halt: th.Event):
     # Create a separate logger for each controller with its own name.
     logger = get_logger(controller_name)
     logger = make_logger(logger=logger, **settings)
-    logger.debug(controller_name + '\n' + pformat(settings))
+    logger.debug(controller_name + '\n' \
+                 + pformat({s:v for s, v in settings.items() if s not in('username', 'password')}))
     # Dynamically import controller functions from submodule
     ctrl_module = importlib.import_module('controllers.%s' % settings['import_path'])
     get_controller = getattr(ctrl_module, 'get_controller')
