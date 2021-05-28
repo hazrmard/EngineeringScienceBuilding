@@ -12,8 +12,6 @@ import threading as th
 import csv
 from datetime import datetime, timedelta
 
-from controllers.esb import Controller
-
 # Issue on Windows where python does not catch keyboard interrupt b/c
 # scipy/sklearn (using intel MLK installed via anaconda) imports do their own
 # interrupt handling and crash. Pip-installed scipy is fine.
@@ -35,7 +33,7 @@ WORKING_DIR = os.path.abspath(os.getcwd())
 # or ini, these defaults are used.
 DEFAULTS = dict(
     settings=os.path.join(SOURCECODE_DIR, 'settings.ini'),
-    logs=os.path.join(WORKING_DIR, 'log.txt'),
+    logs=os.path.join(WORKING_DIR, 'logs.txt'),
     output=os.path.join(WORKING_DIR, 'output.txt'),
     credentialfile='bdxcredentials.ini'
 )
@@ -86,8 +84,6 @@ def get_settings(parsed_args: Namespace, section: str='DEFAULT', write_settings=
     # + the ini section specified in `section` argument. The values are not limited to
     # strings but are processed from the raw ini str values.
     settings = {}
-    # Initialize with settings specified in the command line
-    settings.update(vars(parsed_args))
     # try reading them, if error, return previous settings
     cfg = ConfigParser(allow_no_value=True)
     if parsed_args.settings is None:
@@ -98,25 +94,30 @@ def get_settings(parsed_args: Namespace, section: str='DEFAULT', write_settings=
     for (setting, value) in itertools.chain.from_iterable([cfg[sec].items() for sec in sections]):
         # Only update settings which were not specified in the command line,
         # and which had non empty values
-        if (setting not in settings) or (settings.get(setting) is None):
-            # Float conversion
-            if setting in ('stepsize', 'window', 'interval'):
-                settings[setting] = float(value)
-            # Integer conversion
-            elif setting in ('logs_email_batchsize', 'port'):
-                settings[setting] = int(value)
-            # Tuple[int, int] conversion
-            elif setting=='bounds':
-                settings[setting] = np.asarray([tuple(map(float, value.split(',')))])
-            # Case-sensitive strings
-            elif setting=='target':
-                settings[setting] = value.lower()
-            # List of strings
-            elif setting=='controllers':
-                settings[setting] = value.split(',')
-            # String
-            else:
-                settings[setting] = value
+        # if (setting not in settings) or (settings.get(setting) is None):
+        # Float conversion
+        if setting in ('stepsize', 'window', 'interval'):
+            settings[setting] = float(value)
+        # Integer conversion
+        elif setting in ('logs_email_batchsize', 'port'):
+            settings[setting] = int(value)
+        # Tuple[int, int] conversion
+        elif setting=='bounds':
+            settings[setting] = np.asarray([tuple(map(float, value.split(',')))])
+        # Case-sensitive strings
+        elif setting=='target':
+            settings[setting] = value.lower()
+        # List of strings
+        elif setting=='controllers':
+            settings[setting] = value.split(',')
+        # String
+        else:
+            settings[setting] = value
+    
+    
+    # Override with settings specified in command line (exclude None values)
+    cmdline_args = {setting: value for setting, value in vars(parsed_args).items() if value is not None}
+    settings.update(cmdline_args)
     # Add default settings if they did not have a value in the ini or command line.
     # These are settings that must be set in any case.
     for setting in DEFAULTS:

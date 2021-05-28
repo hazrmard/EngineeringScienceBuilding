@@ -30,11 +30,14 @@ dapp.layout = html.Div([
 
 @app.route('/log', methods=('POST',))   # endpoint for POST requests
 def log():
-    logger = get_logger()
+    logger = get_logger('monitor')
     rdict = request.form
     ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-    logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s. %s' % (ip, rdict.get('message',
-                                                                               rdict.get('msg', 'NO_MESSAGE'))))
+    logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s %s. %s' % \
+                                                        (ip,
+                                                        rdict.get('name', ''),
+                                                        rdict.get('message', rdict.get('msg', 'NO_MESSAGE')),
+                                                        ))
     return 'OK'
 
 
@@ -70,12 +73,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.message is not None:
         settings = get_settings(args, section='DEFAULT')
-        logger = get_logger()
-        logger = make_logger(enable=('stream', 'email', 'http'), logger=logger, **settings)
+        logger = get_logger('monitor')
+        logger = make_logger(enable=('stream', 'file', 'email', 'http'), logger=logger, **settings)
         logger.info(args.message)
     else:
         settings = get_settings(args, section='MONITOR')
-        logger = get_logger()
+        logger = get_logger('monitor')
         logger = make_logger(enable=('stream', 'file'), logger=logger, **settings)
         logger.info('Started monitoring on %s:%s ...' % (settings['host'], settings['port']))
         dapp.run_server(host=settings['host'], port=settings['port'], debug=True)
