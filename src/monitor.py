@@ -33,7 +33,7 @@ def log():
     logger = get_logger('monitor')
     rdict = request.form
     ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
-    logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s %s. %s' % \
+    logger.log(int(rdict.get('levelno', logging.ERROR)), 'From: %s %s, %s' % \
                                                         (ip,
                                                         rdict.get('name', ''),
                                                         rdict.get('message', rdict.get('msg', 'NO_MESSAGE')),
