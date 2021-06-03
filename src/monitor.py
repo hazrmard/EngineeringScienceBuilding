@@ -12,7 +12,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 
-from utils.logging import get_logger, make_logger
+from utils.logs import get_logger, make_logger
 from controller import get_settings, DEFAULTS
 
 DEFAULTS['host'] = '0.0.0.0'

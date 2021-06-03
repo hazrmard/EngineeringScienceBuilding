@@ -7,6 +7,7 @@ from configparser import ConfigParser
 import importlib
 import itertools
 import os
+import sys
 from pprint import pformat
 import threading as th
 import csv
@@ -19,11 +20,9 @@ from datetime import datetime, timedelta
 os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 
 import numpy as np
-import pandas as pd
 import pytz
-from sklearn.base import BaseEstimator
 
-from utils.logging import get_logger, make_logger
+from utils.logs import get_logger, make_logger
 from utils.credentials import get_credentials
 
 
@@ -207,6 +206,7 @@ if __name__ == '__main__':
         args = parser.parse_args()
         default_settings = get_settings(args)
         logger = make_logger(**default_settings)
+        logger.info('Starting script: %s %s' % (sys.executable, os.args))
 
         threads = []
         ev_halt = th.Event()
