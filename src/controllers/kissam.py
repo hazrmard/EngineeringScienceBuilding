@@ -33,7 +33,7 @@ class Controller(SimpleFeedbackController):
 
         def clip_action(self, u, X):
             u = super().clip_action(u, X)
-            return np.clip(u, a_min=X['TempWetBulb'], a_max=X['CT_1.TempCondOut'])
+            return np.clip(u, a_min=X['TempWetBulb'], a_max=None)
 
 
 
