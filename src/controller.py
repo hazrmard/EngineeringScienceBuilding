@@ -206,7 +206,7 @@ if __name__ == '__main__':
         args = parser.parse_args()
         default_settings = get_settings(args)
         logger = make_logger(**default_settings)
-        logger.info('Starting script: %s %s' % (sys.executable, os.args))
+        logger.info('Starting script: %s %s' % (sys.executable, ' '.join(sys.argv)))
 
         threads = []
         ev_halt = th.Event()
