@@ -47,12 +47,13 @@ def make_arguments() -> ArgumentParser:
     # Actual default values should be stored as variables (DEFAULTS), or put in
     # the settings ini file.
     parser = ArgumentParser(description='Condenser set-point optimization script.',
-        epilog='Additional settings can be changed from the specified settings ini file.')
-    # parser.add_argument('-i', '--interval', type=int, required=False, default=None,
-    #                     help='Interval in seconds to apply control action.')
-    # parser.add_argument('-t', '--target', type=str, required=False, default=None,
-    #                     help='Optimization target for condenser water setpoint.',
-    #                     choices=('power', 'temperature'))
+        epilog=('NOTE: Command line settings are global and overrite settings for all controller threads. '
+                'Additional settings can be changed from the specified settings ini file.'))
+    parser.add_argument('-i', '--interval', type=int, required=False, default=None,
+                        help='Interval in seconds to apply control action.')
+    parser.add_argument('-t', '--target', type=str, required=False, default=None,
+                        help='Optimization target for condenser water setpoint.',
+                        choices=('power', 'temperature'))
     # parser.add_argument('-o', '--output', type=str, required=False, default=None,
     #                     help='Location of file to write output to.')
     parser.add_argument('-s', '--settings', type=str, required=False,
@@ -227,8 +228,8 @@ if __name__ == '__main__':
                 thread.join(timeout=2.)
 
     # Exceptions during settings parsing, thread creation
-    except Exception as e:
+    except Exception as exc:
         logger = get_logger()
-        logger.critical(msg=e, exc_info=True)
+        logger.exception(msg=exc, exc_info=True)
         logger.critical(msg='Could not start script.')
         exit(-1)

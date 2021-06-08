@@ -6,6 +6,7 @@ Various classes to be used by `logging.Logger` for sending messages:
 """
 import sys
 import logging
+import traceback
 from logging.handlers import HTTPHandler, BufferingHandler
 import smtplib
 import email
@@ -192,7 +193,12 @@ class RemoteHandler(HTTPHandler):
         Dict[str, str]
             A dictionary to encode into a HTTP request.
         """
-        return super().mapLogRecord(record)
+        rdict = super().mapLogRecord(record)
+        if record.exc_info is not None:
+            exc, value, tb = record.exc_info
+            exc_str = ''.join(traceback.format_exception(exc, value, tb))
+            rdict['message'] += '\n' + exc_str
+        return rdict
 
 
     def emit(self, record: logging.LogRecord):
