@@ -145,7 +145,9 @@ def get_settings(parsed_args: Namespace, section: str='DEFAULT', write_settings=
 def put_control_action(action: np.ndarray, **settings):
     output = settings['output']
     with open(output, 'w') as f:
-        f.write(str(action[0]))
+        writer = csv.writer(f)
+        writer.writerow(action)
+        # f.write(str(action[0]))
 
 
 
