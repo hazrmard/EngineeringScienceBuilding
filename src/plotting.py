@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 
-from utils import is_datetype
+from utils.type_operations import is_datetype
+
+
 
 def animate_dataframes(frames: Iterable[pd.DataFrame], ax: plt.Axes,
                        lseries: Iterable[str], rseries: Iterable[str]=(),
@@ -198,7 +200,7 @@ def model_surface(predict_fn: Callable, X: np.ndarray, vary_idx: Tuple[int],
 
 
 
-def plot_surface(x: np.ndarray, y: np.ndarray, z: np.ndarray, ax=None, **kwargs) \
+def plot_surface(x: np.ndarray, y: np.ndarray, z: np.ndarray, ax=None, fig_kwargs:Dict={}, **kwargs) \
     -> Axes3D:
     """
     Plot a 3D surface given x, y, z coordinates.
@@ -212,13 +214,14 @@ def plot_surface(x: np.ndarray, y: np.ndarray, z: np.ndarray, ax=None, **kwargs)
 
     Keyword Arguments:
         ax {Axes3D} -- The axes on which to plot surface. (default: {None})
+        fig_kwargs {Dict} -- Dictionary of arguments for plt.figure() creation.
         **kwargs -- Passed to `ax.plot_surface()`
 
     Returns:
         Axes3D -- The axes on which the surface was plotted.
     """
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(**fig_kwargs)
         ax = fig.add_subplot(111, projection='3d')
 
     xtime, ytime = is_datetype(x[0]), is_datetype(y[0])

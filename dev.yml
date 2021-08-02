@@ -14,10 +14,14 @@ dependencies:
   - pytorch::pytorch=1.8
   - cudatoolkit=10.2
   - tslearn
+  - optuna=2.8.0
   - dash=1.17.0
   - pip
   - pip:
     - python-dateutil
     - ipyvolume
     - gym
+    - tensorboard
+    - tensorboardX
+    - higher==0.2.1
     - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.6

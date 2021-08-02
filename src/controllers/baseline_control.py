@@ -193,6 +193,7 @@ class SimpleFeedbackController(BaseEstimator):
     def predict(self, X: pd.DataFrame) -> Tuple[np.ndarray, float]:
         feedback = self.feedback(X)
         self._feedbacks.append(feedback)
+        self._states.append(X)
 
         if len(self._actions) < 2:
             action = self.starting_action(X)

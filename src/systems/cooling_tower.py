@@ -3,177 +3,99 @@ Defines the cooling tower environment. In this environment the action variables
 are the tower fan speed and the condenser pump power.
 """
 
-
-
-from typing import List, Callable
+import warnings
+from typing import Union
 
 import numpy as np
-from sklearn.base import BaseEstimator
-from gym import Env, spaces
+import gym
+
+# Environment
+class CoolingTowerEnv(gym.Env):
 
 
-
-class CoolingTower(Env):
-    """
-    An environment based on a data-driven model of ESB chiller with external
-    factors influencing state. With each step ('tick') the state vector is
-    modified based on an array of external values provided.
-    """
-    
-    def __init__(self, estimator: BaseEstimator, is_recurrent: bool,
-                 external: List[np.ndarray], pump_control: bool=True,
-                 dtype: type=np.float32):
-        """
-        Parameters
-        ----------
-        estimator : BaseEstimator
-            A scikit-learn like model that predicts state variables.
-        is_recurrent: bool
-            Whether the estimator is a recurrent neural network. If True, then
-            inputs are reshaped and past state is fed to the estimator as second
-            argument to estimator.predict(state, last_state).
-        external : List[np.ndarray]
-            A list of arrays containing episodes of state variables that are
-            external. For cooling tower, each array is n x 3  with columns for
-            condenser pump power, ambient temperature, and wet bulb temperature.
-        pump_control: bool
-            Whether the condenser pump is controllable, in which action space
-            will be 2 dimensional. Otherwise only fan speed is controlled.
-        dtype : type, optional
-            The data typr of state/action vectors, by default np.float32
-        """
+    def __init__(self, model_fn, ticker_vars, seed=None, scaler_fn=None):
         super().__init__()
-        self.estimator = estimator
-        self.is_recurrent = is_recurrent
-        self.external = external
-        self.pump_control = pump_control
-        self.dtype = dtype
-        self.observation_space = spaces.Box(
-            #  PowConP, TempCondOut, TempAmbient, TempWetbulb, TempEvapIn, TempEvapOut, FlowEvap
-            low=np.asarray([100., 290., 260., 258., 278., 277., 0.], dtype=self.dtype),
-            high=np.asarray([22e3, 310., 310., 300.,291., 289., 0.002], dtype=self.dtype)
-        )
-        if pump_control:
-            # PerFanFreq, PowConP
-            self.action_space = spaces.Box(low=np.array([0., 1e2]),
-                                           high=np.array([1., 22e3]),
-                                           dtype=self.dtype)
-        else:
-            # PerFanFreq
-            self.action_space = spaces.Box(low=0., high=1., shape=(1,),
-                                           dtype=self.dtype)
-        self.random = np.random.RandomState() # pylint: disable=no-member
-        self._state = None
-        self._time = None
-        self._ep_len = None
-        self._curr_external = None
-        self._batch_first = None
-        self.reset()
+        self.model_fn = model_fn
+        self.scaler_fn = (lambda x: x) if scaler_fn is None else scaler_fn
+        self.ticker_vars = ticker_vars
+        self.ticker = None
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            self.observation_space = gym.spaces.Box(
+                low=np.asarray([35, 42, 60, 0, -2]),
+                high=np.asarray([70, 80,80, 420, 9]),
+                dtype=np.float32)
+            self.action_space = gym.spaces.Box(
+                low=np.asarray([-1.]),
+                high=np.asarray([1.]),
+                dtype=np.float32)
+        self.action_domain = np.asarray([55, 75], dtype=np.float32)
+        self.seed = seed
+        self.random = np.random.RandomState(seed)
+        self.observation_space.seed(self.seed)
+        self.action_space.seed(self.seed)
+        self.state = None
+        self.t = None
 
 
-    def reset(self, external: np.ndarray=None) -> np.ndarray:
-        """
-        Reset environment. Randomly pick a new array of external state vectors
-        for the next episode.
-        
-        Parameters
-        ----------
-        external : np.ndarray, optional
-            An array of external state variables to use instead of randomly
-            picking one from self.external, by default None
-        
-        Returns
-        -------
-        np.ndarray
-            The state vector.
-        """
-        if external is None:
-            self._curr_external = self.external[self.random.randint(len(self.external))]
-        else:
-            self._curr_external = external
-        self._ep_len = len(self._curr_external)
-        self._state = self.observation_space.sample()
-        self._state = self.tick(t=0, state=self._state, external=self._curr_external)
-        self._time = 0
-        self._batch_first = getattr(self.estimator, 'batch_first', True)
-        return self._state
+    def reset(self) -> np.ndarray:
+        self.t = 0
+        idx = self.random.randint(0, len(self.ticker_vars))
+        self.ticker = self.ticker_vars[idx]
+        self.state = self.check_state(self.observation_space.sample())
+        self.state = self.tick(self.state)
+        return self.state
 
 
-    def seed(self, seed: int=None):
-        """
-        Seed random number generators in this class instance.
-
-        Parameters
-        ----------
-        seed : int, optional
-            The seed value, by default None
-        """
-        self.random.seed(seed)
-        self.observation_space.seed(seed=seed)
-        self.action_space.seed(seed=seed)
-
-
-    def tick(self, t: int, state: np.ndarray, external: np.ndarray) -> np.ndarray:
-        """
-        Put external state variables in the state vector. Is called every time
-        in step().
-        
-        Parameters
-        ----------
-        t : int
-            The time step since the beginning of the episode.
-        state : np.ndarray
-            The state vector.
-        external : np.ndarray
-            The array of external state variables for this episode.
-        
-        Returns
-        -------
-        np.ndarray
-            The state vector with external state variables written.
-        """
-        if not self.pump_control:
-            state[0] = external[t, 0]   # PowConP: condenser pump power
-        state[2] = external[t, 1]       # TempAmbient: ambient temperature
-        state[3] = external[t, 2]       # TempWetBulb: wet bulb temperature
-        state[4] = external[t, 3]       # TempEvapIn
-        state[5] = external[t, 4]       # TempEvapOut
-        state[6] = external[t, 5]       # FlowEvap
+    def check_state(self, state) -> np.ndarray:
+        # State variables have constraints
+        # wetbulb <= ambient
+        state[0] = np.clip(state[0], None, state[1])
         return state
 
 
+    def scale_setpoint(self, action: Union[float, np.ndarray]) -> np.ndarray:
+        action = np.asarray(action, dtype=np.float32)
+        mid = 0.5 * sum(self.action_domain)
+        return (action - mid) / (self.action_domain[1] - mid)
+
+
+    def tick(self, state: np.ndarray) -> np.ndarray:
+        current_vars = self.ticker.iloc[self.t]
+        self.state[0] = current_vars.TempWetBulb
+        self.state[1] = current_vars.TempAmbient
+        # state[2] is temp cond out, which is modeled in step by model_fn
+        self.state[3] = current_vars.Tonnage
+        self.state[4] = current_vars.PressDiffCond
+        self.t += 1
+        return self.state
+ 
+
     def step(self, action: np.ndarray):
-        self._time += 1
-        # Concatenate actions, states, and external variables
-        if self.pump_control:
-            concat = np.concatenate((action[:1], self._state), axis=0)
-        else:
-            concat = np.concatenate((action, self._state), axis=0)
-        concat = concat.reshape((1, 1, -1)) if self.is_recurrent \
-                                            else concat.reshape((1, -1))
-        pred = self.estimator.predict(concat)
-        powchi, powfans, tempcondin, tempcondout = \
-            pred[..., 0][0], pred[..., 1][0], pred[..., 2][0], pred[..., 3][0]
-        nstate = np.zeros_like(self._state)
-        nstate = self.tick(t=self._time, state=nstate, external=self._curr_external)
-        if self.pump_control:
-            nstate[0] = action[1]
-        nstate[1] = tempcondout # Water temp entering cooling tower from chiller
-        local_vars = locals()
-        reward = self.reward(self._time, self._state, action, nstate, local_vars)
-        done = self.done(self._time, self._state, action, nstate, local_vars)
-        self._state = nstate
-        return nstate, reward, done, local_vars
+        x = np.concatenate((self.state, action))
+        x = self.scaler_fn(x.reshape(1, -1))
+        x[-1] = action[0] # action is in [-1,1] range already
+        temp_cond_in, temp_cond_out, pow_fan = self.model_fn(x)[0]
+        # temp into condenser/out of tower is:
+        # lower than last temp into tower,
+        # AND larger than wetbulb (cooling)
+        temp_cond_in = max(min(temp_cond_in, self.state[2]), self.state[0])
+        # condenser causes water to heat
+        temp_cond_out = max(temp_cond_in, temp_cond_out)
+
+        reward = self.reward(self.state, temp_cond_in, temp_cond_out, pow_fan, action)
+
+        self.state = self.tick(self.state)
+        self.state[2] = temp_cond_out
+        done = self.t >= len(self.ticker)
+        return self.state, reward, done, None
 
 
-    def reward(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
-               locals: dict) -> float:
-        # return - locals.get('powchi') / 421000. - locals.get('powfans') / 21230.
-        # return - locals.get('powchi') / 421000.
-        return - locals.get('powfans') / 21230 - locals.get('tempcondin') / 310
-
-
-    def done(self, t, state: np.ndarray, action: np.ndarray, nstate: np.ndarray,
-             locals: dict) -> bool:
-        if self._ep_len - 1 <= t:
-            return True
+    def reward(self, state, temp_cond_in, temp_cond_out, pow_fan, action) -> float:
+        efficiency = np.clip((state[2] - temp_cond_in) / \
+                             (state[2] - state[0] + 1e-2),
+                             0, 1)
+        power = np.clip(max(pow_fan, 0) / 10, 0, 1)
+        reward = efficiency - power
+        # reward = 1. if action[0] > 0 else 0.
+        return reward
