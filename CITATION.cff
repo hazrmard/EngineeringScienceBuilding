@@ -1,0 +1,13 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: EngineeringScienceBuilding
+message: Please cite if you use this in your work.
+type: software
+authors:
+  - given-names: Ibrahim
+    family-names: Ahmed
+    email: ibrahim.ahmed@vanderbilt.edu
+    affiliation: Vanderbilt University
+    orcid: 'https://orcid.org/0000-0002-3168-1449'
