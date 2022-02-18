@@ -4,12 +4,18 @@ channels:
 dependencies:
   - python=3.7
   - numpy
+  - pytorch::cpuonly
+  - pytorch::pytorch=1.8
   - pandas
   - matplotlib
   - tqdm
   - scikit-learn
   - dash=1.17.0
+  - ffmpeg
   - pip
   - pip:
+    - higher
+    - gym
+    - tensorboard
     - python-dateutil
     - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.6

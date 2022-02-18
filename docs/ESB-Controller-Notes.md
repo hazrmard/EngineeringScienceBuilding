@@ -4,6 +4,8 @@ order: 1000
 hasequations: false
 ---
 
+Data for setpoint is recorded in BDX trend 3481. Cooling tower 1 and 2 data is in trends 2422, 2841.
+
 ## Periods
 
 Timestamps for various system changes.
@@ -22,6 +24,9 @@ Timestamps for various system changes.
     2021-06-15 1403-5   Script errored, couldn't read BDX due to faulty TLS certificates
     2021-06-16 1240-5   Script restarted with correct paths
     2021-06-17 0505-5   Chiller 2 online (check exact time)
+    2021-08-15 0610-5   Controller offline. Server was restarted.
+    2021-08-17 1214-5   Controller restarted.
+    2021-08-31 1100-5   Chiller 1 online
 
 ## Timespans to investigate
 

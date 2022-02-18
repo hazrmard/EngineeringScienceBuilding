@@ -69,7 +69,7 @@ def animate_dataframes(frames: Iterable[pd.DataFrame], ax: plt.Axes,
         if isinstance(fmt, str):
             raise TypeError('Provide format string for rseries.')
         elif isinstance(fmt, Iterable) and all((map(lambda x: isinstance(x, str), fmt))):
-            fmt = ((*fmt[:len(lseries)]), (*fmt[len(lseries):]))
+            fmt = (fmt[:len(lseries)], fmt[len(lseries):])
     else:
         if isinstance(fmt, str):
             fmt = [fmt] * len(lseries)

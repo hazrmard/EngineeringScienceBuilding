@@ -2,7 +2,7 @@ name: esb
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.9
   - numpy
   - pandas
   - matplotlib
@@ -11,11 +11,12 @@ dependencies:
   - jupyter_contrib_nbextensions
   - tqdm
   - scikit-learn
-  - pytorch::pytorch=1.8
+  - pytorch::pytorch=1.10
   - cudatoolkit=10.2
   - tslearn
-  - optuna=2.8.0
-  - dash=1.17.0
+  - optuna
+  - dash
+  - pyfmi
   - pip
   - pip:
     - python-dateutil
@@ -25,3 +26,4 @@ dependencies:
     - tensorboardX
     - higher==0.2.1
     - git+https://git.isis.vanderbilt.edu/SmartBuildings/bdx.git@v0.2.6
+    - git+https://github.com/CPCLAB-UNIPI/SIPPY@6c233881f32280ee79267cba06b2f56984424ebd#egg=sippy

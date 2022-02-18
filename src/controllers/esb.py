@@ -10,18 +10,19 @@ import pandas as pd
 import bdx
 
 from .baseline_control import SimpleFeedbackController
+from .rl_control import RLContinuousController
 
 
 
 class Controller(SimpleFeedbackController):
 
-        def __init__(self, bounds, stepsize, window, target):
-            super().__init__(bounds=bounds, stepsize=stepsize, window=window)
+        def __init__(self, bounds, stepsize, window, tolerance, target):
+            super().__init__(bounds=bounds, stepsize=stepsize, window=window, tolerance=tolerance)
             self.target = target
 
         def feedback(self, X):
             if self.target == 'temperature':
-                f = -X['TempCondIn']
+                f = -(X['TempCondIn'] - X['TempWetBulb'])
                 if np.isnan(f):
                     raise ValueError('TempCondIn is NaN. Could not calculate feedback.')
                 return f
@@ -37,8 +38,9 @@ class Controller(SimpleFeedbackController):
             return np.asarray([X['TempWetBulb'] + self.random.uniform(low=4, high=6)])
 
         def clip_action(self, u, X):
-            u = super().clip_action(u, X)
-            return np.clip(u, a_min=X['TempWetBulb'], a_max=None)
+            # u = super().clip_action(u, X)
+            return np.clip(u, a_min=max(self.bounds[0,0], X['TempWetBulb'] + 3.),
+                             a_max=self.bounds[0,1])
 
 
 

@@ -4,7 +4,7 @@ here do not use machine learning to make decisions. Although they may optionally
 machine-learned models for their decision making logic. Each controller implements
 the following interface:
 
-`predict(state) -> Tuple[action]` or `predict(state) -> action`
+`predict(state) -> Tuple[action]`
 
 
 """
@@ -15,7 +15,7 @@ from collections import deque
 from sklearn.base import BaseEstimator
 import numpy as np
 import pandas as pd
-from scipy.optimize import fmin, minimize
+from scipy.optimize import minimize
 
 
 
@@ -58,7 +58,7 @@ class GridSearchController(BaseEstimator):
         #                         vary_range=(self.bounds,), vary_num=vary_num)
         # control = y[np.arange(len(y)).astype(int), np.argmin(z, axis=1).astype(int)]
         # return np.squeeze(control)
-        return control
+        return control,
 
 
 
@@ -86,7 +86,7 @@ class QuasiNewtonController(BaseEstimator):
                               bounds=self.bounds, method='L-BFGS-B',
                               options={'maxiter': 10, 'disp': True})
             y[i] = argmin.x
-        return np.squeeze(y)
+        return np.squeeze(y),
 
 
 
@@ -107,7 +107,7 @@ class BinaryApproachController(BaseEstimator):
         approach = output - baseline
         control[approach <= self.margin] = self.bounds[0]
         control[approach > self.margin] = self.bounds[-1]
-        return control
+        return control,
 
 
 
@@ -178,15 +178,16 @@ class FeedbackController(BaseEstimator):
 
 class SimpleFeedbackController(BaseEstimator):
 
-    def __init__(self, bounds, stepsize:float=1, window: int=1, seed=None):
+    def __init__(self, bounds, stepsize:float=1, window: int=1, tolerance: float=0.5, seed=None):
         self.bounds = np.asarray(bounds) # 2D array of [(min, max)] for setpoint
         self.stepsize = stepsize
         self.window = window
+        self.tolerance = tolerance
         self.seed = seed
         self.random = np.random.RandomState(seed) # pylint: disable=no-member
-        self._feedbacks = deque(maxlen=100)
+        self._feedbacks = []
         self._states = deque(maxlen=100)
-        self._actions = deque(maxlen=100)
+        self._actions = []
         self._errors = deque(maxlen=100)
 
 
@@ -202,23 +203,29 @@ class SimpleFeedbackController(BaseEstimator):
             step_action = self._actions[-1] - self._actions[-min(2, len(self._actions))]
         else:
             # [a|f]_[1|2] is actions and feedbacks at relative times 1, 2 i.e. first, second
-            a_2, a_1 = self._actions[-1], self._actions[-2]
-            f_2, f_1 = self._feedbacks[-1], self._feedbacks[-2]
+            a_2, a_1 = self._actions[-1], np.mean(self._actions[-self.window-1:-1])
+            f_2, f_1 = self._feedbacks[-1], np.mean(self._feedbacks[-self.window-1:-1])
             # What was the direction of change in action from the last 2 steps?
             dir_a = np.sign(a_2 - a_1)
             # What was the direction of change in feedback from the last 2 steps?
-            dir_f = np.sign(f_2 - f_1)
+            diff_f = f_2 - f_1
+            if abs(diff_f) < self.tolerance:
+                dir_f = 0
+            else:
+                dir_f = np.sign(f_2 - f_1)
             # Feedback dir, action dir, step action
             #       0           0          rnd
-            #       0           -          rnd
-            #       0           +          rnd
+            #       0           -          +
+            #       0           +          -
             #       -           0          rnd
             #       -           -           +       dir_f * dir_a
             #       -           +           -       dir_f * dir_a
             #       +           0           0       dir_f * dir_a
             #       +           -           -       dir_f * dir_a
             #       +           +           +       dir_f * dir_a
-            if (dir_f == 0 or (dir_f < 0 and dir_a == 0)):
+            if (dir_f == 0 and dir_a != 0):
+                step_action = -dir_a * self.stepsize
+            elif (dir_f <= 0 and dir_a == 0):
                 step_action = self.stepsize * np.random.choice([-1, 1], size=1)
             else:
                 step_action = self.stepsize * dir_a * dir_f
@@ -226,6 +233,8 @@ class SimpleFeedbackController(BaseEstimator):
             action = self.clip_action(action, X)
             
             self._actions.append(action)
+            self._actions = self._actions[-100:]
+            self._feedbacks = self._feedbacks[-100:]
         return action, feedback
 
 

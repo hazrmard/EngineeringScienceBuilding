@@ -9,11 +9,12 @@ src_path = os.path.join(os.path.dirname(__file__), '..')
 local_path = os.path.abspath(src_path)
 
 # Submodules which may be packages not installed
-commonml_path = os.path.join(local_path, 'commonml')
-sys.path.append(commonml_path)
+# commonml_path = os.path.join(local_path, 'commonml')
+# sys.path.append(commonml_path)
 
 # Local path is appended at the end, so submodules explicitly added take precedence
-sys.path.append(local_path)
+if local_path not in sys.path:
+    sys.path.append(local_path)
 
 try:
     datadir = os.path.join(os.environ.get('DATADIR'), 'EngineeringScienceBuilding')

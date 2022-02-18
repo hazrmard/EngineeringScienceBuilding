@@ -38,6 +38,8 @@ The documentation is divided into a discussion of background concepts in physics
 
 8. [ESB Controller Deployment Notes](ESB-Controller-Notes.md)
 
+9. [Kissam Controller Deployment Notes](Kissam-Controller-Notes.md)
+
 
 ## Installation
 

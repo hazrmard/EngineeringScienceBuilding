@@ -1,1 +1,1 @@
-from .cooling_tower import CoolingTowerEnv
+from .cooling_tower import CoolingTowerEnv, CoolingTowerIOEnv
