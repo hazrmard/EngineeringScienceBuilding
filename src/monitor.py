@@ -46,11 +46,10 @@ fig.update_layout(clickmode='event+select')
 fig.update_traces(marker_size=20)
 
 
-with open('../logs.txt', 'r') as f:
-    lines = f.readlines(5000)
+
 dapp.layout = html.Div([
     html.H3('Cooling Tower Control Logs'),
-    html.Textarea('\n'.join(lines), cols=128, rows=24),
+    html.Textarea('\n'.join(""), cols=128, rows=24),
     html.H3(['Action setpoints']),
     html.H3(['Anomalies']),
     dcc.Graph(
