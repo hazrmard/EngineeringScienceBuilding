@@ -8,9 +8,10 @@ import logging
 
 from flask import request
 from dash import Dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import html, dcc
 import plotly.express as px
+import pandas as pd
+import numpy as np
 
 from utils.logs import get_logger, make_logger
 from controller import get_settings, DEFAULTS
@@ -22,9 +23,40 @@ DEFAULTS['port'] = 5000
 dapp = Dash(__name__)   # the Dash application wrapper
 app = dapp.server       # The flask app used
 
+styles = {
+    'pre': {
+        'border': 'thin lightgrey solid',
+        'overflowX': 'scroll'
+    }
+}
+df = pd.DataFrame({
+    # "x": [1,2,1,2],
+    "x": np.random.randint(55, 75, size=20),
+    "y": np.random.randint(55, 75, size=20),
+    # "y": [1,2,3,4],
+    "customdata": np.arange(20),
+    # "status": ["nominal", "anomalous", "nominal", "anomalous"]
+    "status": np.random.choice(["nominal", "anomalous"], size=20, replace=True)
+})
+
+fig = px.scatter(df, x="x", y="y", color="status", custom_data=["customdata"])
+
+fig.update_layout(clickmode='event+select')
+
+fig.update_traces(marker_size=20)
+
+
+with open('../logs.txt', 'r') as f:
+    lines = f.readlines(5000)
 dapp.layout = html.Div([
-    html.H3('Logs'),
-    html.Div(['Hello'])
+    html.H3('Cooling Tower Control Logs'),
+    html.Textarea('\n'.join(lines), cols=128, rows=24),
+    html.H3(['Action setpoints']),
+    html.H3(['Anomalies']),
+    dcc.Graph(
+        id='basic-interactions',
+        figure=fig
+    )
 ])
 
 

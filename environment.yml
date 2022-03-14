@@ -2,10 +2,11 @@ name: esb-prod
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.9
   - numpy
+  - scipy
   - pytorch::cpuonly
-  - pytorch::pytorch=1.8
+  - pytorch::pytorch=1.10
   - pandas
   - matplotlib
   - tqdm

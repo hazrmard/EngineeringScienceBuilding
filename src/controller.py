@@ -96,7 +96,7 @@ def get_settings(parsed_args: Namespace, section: str='DEFAULT', write_settings=
         # and which had non empty values
         # if (setting not in settings) or (settings.get(setting) is None):
         # Float conversion
-        if setting in ('stepsize', 'window', 'interval'):
+        if setting in ('stepsize', 'window', 'interval', 'tolerance'):
             settings[setting] = float(value)
         # Integer conversion
         elif setting in ('logs_email_batchsize', 'port'):
@@ -161,6 +161,7 @@ def run(controller_name: str, ev_halt: th.Event):
     logger.debug(controller_name + '\n' \
                  + pformat({s:v for s, v in settings.items() if s not in('username', 'password')}))
     # Dynamically import controller functions from submodule
+    logger.debug('CTRL MODULE: %s', 'controllers.%s' % settings['import_path'])
     ctrl_module = importlib.import_module('controllers.%s' % settings['import_path'])
     get_controller = getattr(ctrl_module, 'get_controller')
     get_current_state = getattr(ctrl_module, 'get_current_state')

@@ -12,14 +12,14 @@ the following interface:
 from typing import Union, Tuple
 from collections import deque
 
-from sklearn.base import BaseEstimator
+# from sklearn.base import BaseEstimator
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 
 
 
-class GridSearchController(BaseEstimator):
+class GridSearchController:
 
 
     def __init__(self, model, bounds, resolution, vary_idx):
@@ -62,7 +62,7 @@ class GridSearchController(BaseEstimator):
 
 
 
-class QuasiNewtonController(BaseEstimator):
+class QuasiNewtonController:
 
 
     def __init__(self, model, bounds, resolution, vary_idx):
@@ -90,7 +90,7 @@ class QuasiNewtonController(BaseEstimator):
 
 
 
-class BinaryApproachController(BaseEstimator):
+class BinaryApproachController:
      # See: http://www.computrols.com/cooling-tower-control-based-approach/
 
     def __init__(self, model, bounds, resolution, vary_idx, margin):
@@ -111,7 +111,7 @@ class BinaryApproachController(BaseEstimator):
 
 
 
-class FeedbackController(BaseEstimator):
+class FeedbackController:
 
     def __init__(self, bounds, kp: float=1., ki: float=1., kd: float=1., window: int=1):
         self.bounds = np.asarray(bounds)
@@ -176,9 +176,10 @@ class FeedbackController(BaseEstimator):
 
 
 
-class SimpleFeedbackController(BaseEstimator):
+class SimpleFeedbackController:
 
-    def __init__(self, bounds, stepsize:float=1, window: int=1, tolerance: float=0.5, seed=None):
+    def __init__(self, bounds, stepsize:float=1, window: int=1, tolerance: float=0.1, seed=None):
+        super().__init__()
         self.bounds = np.asarray(bounds) # 2D array of [(min, max)] for setpoint
         self.stepsize = stepsize
         self.window = window

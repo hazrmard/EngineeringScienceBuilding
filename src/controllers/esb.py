@@ -10,7 +10,7 @@ import pandas as pd
 import bdx
 
 from .baseline_control import SimpleFeedbackController
-from .rl_control import RLContinuousController
+# from .rl_control import RLContinuousController
 
 
 
@@ -48,7 +48,7 @@ def get_controller(**settings):
     stepsize, window = settings['stepsize'], settings['window']
     setpoint_bounds = settings['bounds']
     ctrl = Controller(bounds=setpoint_bounds, stepsize=stepsize, window=window,
-                      target=settings['target'])
+                      target=settings['target'], tolerance=settings['tolerance'])
     return ctrl
 
 

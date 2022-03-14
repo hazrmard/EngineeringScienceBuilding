@@ -204,6 +204,43 @@ class CoolingTowerIOEnv(CoolingTowerEnv):
 
 
 
+class CoolingTowerPhysics(CoolingTowerEnv):
+
+
+    def __init__(self, ticker_vars: List[pd.DataFrame], seed=None, scaler_fn: Callable = None):
+        super().__init__(model_fn=None, ticker_vars=ticker_vars, seed=seed, scaler_fn=scaler_fn)
+
+
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Any]:
+        # ode
+        # dT/dt \prop (T-T_wb) / flow_rate
+        #       \prop (T_eq - T_wb) / flow_rate
+        # where T_eq is after mixing with replacement water, such that
+        #   m_r . c . (T_r - T_eq) = m_R . c . (T_R - T_eq)
+        #   m_r.T_r - m_r.T_eq = m_R.T_R - m_R.T_eq
+        #   T_eq = (m_R.T_R - m_r.T_r) / (m.R - m_r)
+        # where R = reservoir, r=replacement
+        # let T_r = ambient temp, T_R = temp condenser out
+        # And, parametrizing evaporative loss and mass conservation:
+        #   m_r \propto (T_R - T_wb), m_r = k_r . (T_R - T_wb),
+        #   m_r + m_R = m, so m_R = m - m_r
+        # Then, dT / dt
+        #   k . ((m_R.T_R - m_r.T_r) / (m.R - m_r) - T_wb) / flow_rate
+        # = k . (((m - m_r).T_R - m_r.T_r) / ((m - m_r) - m_r) - T_wb) / flow_rate
+        # = k . (((m - m_r).T_R - m_r.T_r) / (m - 2m_r) - T_wb) / flow_rate
+        # = k . (
+        #   ((m - k_r . (T_R - T_wb)).T_R - k_r . (T_R - T_wb).T_r) / (m - 2k_r . (T_R - T_wb)) - T_wb
+        # ) / flow_rate
+        # Where
+        #   k = proportionality constant for Newton's law + fan speed + flow rate
+        #   k_r = evaporative cooling constant
+        #   m = total water mass in condenser loop (constant)
+        #   T_R = water reservoir temperature, = condenser out temperature
+        #   T_r = replacement water temperature = ambient temperature
+        pass
+
+
+
 
 def train_mlp_regressor(inputs: np.ndarray, outputs: np.ndarray, **model_kwargs):
     model = MLPRegressor(**model_kwargs)

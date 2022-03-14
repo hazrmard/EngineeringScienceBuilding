@@ -17,13 +17,13 @@ from .esb import update_controller
 
 class Controller(SimpleFeedbackController):
 
-        def __init__(self, bounds, stepsize, window, target):
-            super().__init__(bounds=bounds, stepsize=stepsize, window=window)
+        def __init__(self, bounds, stepsize, window, tolerance, target):
+            super().__init__(bounds=bounds, stepsize=stepsize, tolerance=tolerance, window=window)
             self.target = target
 
         def feedback(self, X):
             if self.target == 'temperature':
-                f = -X['CT_1.TempCondIn']
+                f = -(X['CT_1.TempCondIn'] - X['TempWetBulb'])
                 if np.isnan(f):
                     raise ValueError('CT_1.TempCondIn is NaN. Could not calculate feedback.')
                 return f
@@ -41,7 +41,7 @@ def get_controller(**settings):
     stepsize, window = settings['stepsize'], settings['window']
     setpoint_bounds = settings['bounds']
     ctrl = Controller(bounds=setpoint_bounds, stepsize=stepsize, window=window,
-                      target=settings['target'])
+                      target=settings['target'], tolerance=settings['tolerance'])
     return ctrl
 
 
