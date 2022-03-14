@@ -15,7 +15,7 @@ dependencies:
   - cudatoolkit=10.2
   - tslearn
   - optuna
-  - dash
+  - dash=2.0.0
   - pyfmi
   - pip
   - pip:

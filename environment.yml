@@ -11,7 +11,7 @@ dependencies:
   - matplotlib
   - tqdm
   - scikit-learn
-  - dash=1.17.0
+  - dash=2.0.0
   - ffmpeg
   - pip
   - pip:
